@@ -1,0 +1,14 @@
+{application, drink_web,
+ [{description, "Web Server for Drink"},
+  {vsn, "1.0"},
+  {modules, [drink_web_app,
+             drink_web_sup,
+             drink_web,
+             drink_web_events,
+             drink_web_event_worker,
+             drink_json_api]},
+  {registered,[]},
+  {applications, [kernel, stdlib, sasl, ssl, yaws]},
+  {mod, {drink_web_app, []}},
+  {start_phases, []}
+]}.
