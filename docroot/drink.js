@@ -233,6 +233,16 @@ $(document).ready(function() {
         else
             $('#currentuser_admin').hide();
     });
+
+    $('body').bind('money_log_event', function(e, data) {
+        user = $('body').data('user');
+        if (user.username != data.username) return;
+        if (data.direction == "in")
+            user.credits += data.amount;
+        else
+            user.credits -= data.amount;
+        $('body').data('user', user).trigger('user_changed', user)
+    });
 });
 
 drink.tab = new (function() {
@@ -879,7 +889,7 @@ drink.tabs.user_admin = new (function() {
 
     var got_user_info = function(userinfo) {
         if($('body').data('user').username == userinfo.username) {
-            $('body').data('user', userinfo).trigger('user_changed', userinfo);
+        //    $('body').data('user', userinfo).trigger('user_changed', userinfo);
         }
         
         current_edit_user = userinfo;
