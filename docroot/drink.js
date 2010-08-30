@@ -101,7 +101,7 @@ drink.websocket = new (function() {
         }
         
         // TODO: dynamic websocket address
-        self.ws = new WebSocket("ws://192.168.1.3:42080/drink/events");
+        self.ws = new WebSocket("ws://mini.danw.org:42080/drink/events");
         self.ws.onopen = function() {
             console.log("WS Got open event");
             self.use = true;
