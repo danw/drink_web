@@ -942,7 +942,7 @@ drink.tabs.user_admin = new (function() {
                 reason = prompt("Please enter reason: (lower case with underscores)");
             if(reason == null)
                 return;
-            if(!confirm("Press OK if the value is the difference of they're current balance, Cancel if it's the full value.")) {
+            if(!confirm("Press OK if the value is the difference from their current balance, Cancel if it's the full value.")) {
                 diff = diff - current_edit_user.credits;
             }
         } else if(reason == 'fix_amount') {
