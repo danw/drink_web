@@ -93,8 +93,8 @@ request(A, U, 'POST', drop) ->
 request(_, _, _, drop) -> error(wrong_method);
 
 request(_, U, 'GET', events) ->
-    {ok, Pid, SocketMode} = drink_web_events:register(U, [temperature, drop]),
-    {websocket, Pid, SocketMode};
+    {ok, Pid} = drink_web_event_listener:start_link(U),
+    {websocket, Pid, true};
 request(_, _, _, events) -> error(wrong_method);
 
 request(A, U, 'GET', logs) ->
