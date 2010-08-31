@@ -200,8 +200,7 @@ drink.time = {
 
 $(document).ready(function() {
     var gotUser = function(data) {
-        $('body').data('user', data);
-        $('body').trigger('user_changed', data);
+        $('body').data('user', data).trigger('user_changed', data);
     };
     
     $('body').data('user', null);
@@ -235,13 +234,29 @@ $(document).ready(function() {
     });
 
     $('body').bind('money_log_event', function(e, data) {
-        user = $('body').data('user');
+        var user = $('body').data('user');
         if (user.username != data.username) return;
         if (data.direction == "in")
             user.credits += data.amount;
         else
             user.credits -= data.amount;
-        $('body').data('user', user).trigger('user_changed', user)
+        $('body').data('user', user).trigger('user_changed', user);
+    });
+
+    $('body').bind('user_changed_event', function(e, data) {
+        var user = $('body').data('user');
+        var changed = 0;
+        if (user.username == data.username) {
+            if ("admin" in data) {
+                if (data.admin.old != data.admin["new"]) {
+                    user.admin = data.admin["new"];
+                    changed = 1;
+                }
+            }
+            if (changed)
+                $('body').data('user', user).trigger('user_changed', user);
+        }
+
     });
 });
 
