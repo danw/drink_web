@@ -121,10 +121,38 @@ handle_incoming_call(State, Data) ->
     end.
 
 encode_event(drink, MoneyLog = #money_log{}) ->
-    json:encode({struct, [{event, atom_to_list(money_log)},
+    json:encode({struct, [{event, "money_log"},
                           {data, {struct, [{username, MoneyLog#money_log.username},
                                     {admin, MoneyLog#money_log.admin},
                                     {amount, MoneyLog#money_log.amount},
                                     {direction, atom_to_list(MoneyLog#money_log.direction)}]}}]});
+encode_event(drink, {user_changed, Username, Changes}) ->
+    json:encode({struct, [{event, "user_changed"},
+                          {data, {struct, [{username, Username}] ++ encode_user_changes(Changes)}}]});
+encode_event(drink, {machine, Machine}) ->
+    json:encode({struct, [{event, "machine"},
+                          {data, drink_json_api:machine_stat(false, Machine)}]});
+encode_event(drink, T = #temperature{}) ->
+    json:encode({struct, [{event, "temperature"},
+                          {data, {struct, [{machine, T#temperature.machine},
+                                        %  {time, T#temperature.time},
+                                           {temperature, T#temperature.temperature}]}}]});
+encode_event(drink, D = #drop_log{}) ->
+    json:encode({struct, [{event, "drop_log"},
+                          {data, {struct, [{machine, D#drop_log.machine},
+                                           {slot, D#drop_log.slot},
+                                        %  {time, D#drop_log.time},
+                                        %  {status, D#drop_log.status},
+                                           {username, D#drop_log.username}]}}]});
 encode_event(drink, Event) ->
     json:encode({struct, [{event, atom_to_list(element(1, Event))}]}).
+
+encode_user_changes([]) -> [];
+encode_user_changes([{add_ibutton, IButton}|T]) ->
+    [{add_ibutton, IButton}] ++ encode_user_changes(T);
+encode_user_changes([{del_ibutton, IButton}|T]) ->
+    [{del_ibutton, IButton}] ++ encode_user_changes(T);
+encode_user_changes([{admin, Old, New}|T]) ->
+    [{admin, {struct, [{old, Old}, {new, New}]}}] ++ encode_user_changes(T);
+encode_user_changes([H|T]) ->
+    [] ++ encode_user_changes(T).
