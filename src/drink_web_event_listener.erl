@@ -26,6 +26,7 @@
 -module (drink_web_event_listener).
 -behaviour (gen_server).
 
+-include_lib ("drink/include/drink_mnesia.hrl").
 -include_lib ("drink_log/include/drink_log.hrl").
 
 -export ([start_link/1]).
@@ -129,9 +130,12 @@ encode_event(drink, MoneyLog = #money_log{}) ->
 encode_event(drink, {user_changed, Username, Changes}) ->
     json:encode({struct, [{event, "user_changed"},
                           {data, {struct, [{username, Username}] ++ encode_user_changes(Changes)}}]});
-encode_event(drink, {machine, Machine}) ->
-    json:encode({struct, [{event, "machine"},
+encode_event(drink, {machine_added, Machine}) ->
+    json:encode({struct, [{event, "machine_added"},
                           {data, drink_json_api:machine_stat(false, Machine)}]});
+encode_event(drink, {machine_deleted, Machine}) ->
+    json:encode({struct, [{event, "machine_deleted"},
+                          {data, {struct, [{machineid, atom_to_list(Machine#machine.machine)}]}}]});
 encode_event(drink, T = #temperature{}) ->
     json:encode({struct, [{event, "temperature"},
                           {data, {struct, [{machine, T#temperature.machine},

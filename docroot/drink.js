@@ -794,7 +794,7 @@ drink.tabs.drink_machines = new (function() {
             success: function() {
                 $('#machine_add_form').hide();
                 $('#machine_add_form input').val(false);
-                self.refresh();
+                //self.refresh();
             },
             error: function() {
                 alert("Error adding machine");
@@ -837,6 +837,16 @@ drink.tabs.drink_machines = new (function() {
     }
     
     $(document).ready(function () {
+        $('body').bind('machine_added_event', function(e, data) {
+            // TODO: handle this
+        });
+
+        $('body').bind('machine_deleted_event', function(e, machine) {
+            if (machine.machineid in machine_list) {
+                machine_list[machine.machineid].remove();
+            }
+        });
+
         $('body').bind('machine_event', function(e, machine) {
             if (machine.machineid in machine_list) {
                 machine_list[machine.machineid].updateInfo(machine);
