@@ -80,13 +80,8 @@ request(_, _, _, currentuser) -> error(wrong_method);
 
 request(A, U, 'POST', drop) ->
     case {yaws_api:postvar(A, "machine"), yaws_api:postvar(A, "slot")} of
-        {{ok, Machine}, {ok, Slot}} ->
-            case string:to_integer(Slot) of
-                {error, _Reason} ->
-                    error(invalid_args);
-                {SlotNum, _} ->
-                    api(U, drop, [{machine, Machine}, {slot, SlotNum}])
-            end;
+        {{ok, Machine}, {ok, SlotNum}} ->
+            api(U, drop, [{machine, Machine}, {slot, SlotNum}]);
         _ ->
             error(invalid_args)
     end;
@@ -99,17 +94,8 @@ request(_, _, _, events) -> error(wrong_method);
 
 request(A, U, 'GET', logs) ->
     case {yaws_api:queryvar(A, "offset"), yaws_api:queryvar(A, "limit")} of
-        {{ok, OffsetStr}, {ok, LimitStr}} ->
-            case {string:to_integer(OffsetStr), string:to_integer(LimitStr)} of
-                {{error, _Reason}, _} ->
-                    error(invalid_args);
-                {_, {error, _Reason}} ->
-                    error(invalid_args);
-                {{Offset, _Rest}, {Limit, _Rest}} ->
-                    api(U, logs, [{offset, Offset}, {limit, Limit}]);
-                _ ->
-                    error(invalid_args)
-            end;
+        {{ok, Offset}, {ok, Limit}} ->
+            api(U, logs, [{offset, Offset}, {limit, Limit}]);
         _ ->
             error(invalid_args)
     end;
@@ -138,22 +124,8 @@ request(A, U, 'POST', setslot) ->
           yaws_api:postvar(A, "price"),
           yaws_api:postvar(A, "available"),
           yaws_api:postvar(A, "disabled")} of
-        {{ok, Machine}, {ok, SlotStr}, {ok, Name}, {ok, PriceStr}, {ok, AvailStr}, {ok, DisabledStr}} ->
-            case {string:to_integer(SlotStr),
-                  string:to_integer(PriceStr),
-                  string:to_integer(AvailStr),
-                  list_to_atom(DisabledStr)} of
-                {{error, _}, _, _, _} ->
-                    error(invalid_args);
-                {_, {error, _}, _, _} ->
-                    error(invalid_args);
-                {_, _, {error, _}, _} ->
-                    error(invalid_args);
-                {{Slot, _}, {Price, _}, {Avail, _}, Disabled} ->
-                    api(U, setslot, [{machine, Machine}, {slot, Slot}, {name, Name}, {price, Price}, {available, Avail}, {disabled, Disabled}]);
-                _ ->
-                    error(invalid_args)
-            end;
+        {{ok, Machine}, {ok, Slot}, {ok, Name}, {ok, Price}, {ok, Avail}, {ok, Disabled}} ->
+            api(U, setslot, [{machine, Machine}, {slot, Slot}, {name, Name}, {price, Price}, {available, Avail}, {disabled, Disabled}]);
         _ ->
             error(invalid_args)
     end;
@@ -161,17 +133,8 @@ request(_, _, _, setslot) -> error(wrong_method);
 
 request(A, U, 'GET', temperatures) ->
     case {yaws_api:queryvar(A, "from"), yaws_api:queryvar(A, "length")} of
-        {{ok, FromStr}, {ok, LengthStr}} ->
-            case {string:to_integer(FromStr), string:to_integer(LengthStr)} of
-                {{error, _Reason}, _} ->
-                    error(invalid_args);
-                {_, {error, _Reason}} ->
-                    error(invalid_args);
-                {{From, _Rest}, {Limit, _Rest}} ->
-                    api(U, temperatures, [{from, From}, {length, Limit}]);
-                _ ->
-                    error(invalid_args)
-            end;
+        {{ok, From}, {ok, Length}} ->
+            api(U, temperatures, [{from, From}, {length, Length}]);
         _ ->
             error(invalid_args)
     end;
@@ -187,14 +150,14 @@ request(A, U, 'GET', userinfo) ->
 request(_, _, _, userinfo) -> error(wrong_method);
 
 request(A, U, 'POST', addmachine) ->
-    case {postvar(A, atom, "machine"),
-          postvar(A, string, "name"),
-          postvar(A, atom, "password"),
-          postvar(A, ip, "public_ip"),
-          postvar(A, atom, "available_sensor"),
-          postvar(A, ip, "machine_ip"),
-          postvar(A, atom, "allow_connect"),
-          postvar(A, atom, "admin_only")} of
+    case {yaws_api:postvar(A, "machine"),
+          yaws_api:postvar(A, "name"),
+          yaws_api:postvar(A, "password"),
+          yaws_api:postvar(A, "public_ip"),
+          yaws_api:postvar(A, "available_sensor"),
+          yaws_api:postvar(A, "machine_ip"),
+          yaws_api:postvar(A, "allow_connect"),
+          yaws_api:postvar(A, "admin_only")} of
         {{ok, Atom},
          {ok, Name},
          {ok, Password},
@@ -211,7 +174,7 @@ request(A, U, 'POST', addmachine) ->
 request(_, _, _, addmachine) -> error(wrong_method);
 
 request(A, U, 'POST', delmachine) ->
-    case postvar(A, atom, "machine") of
+    case yaws_api:postvar(A, "machine") of
         {ok, Machine} ->
             api(U, delmachine, [{machine, Machine}]);
         _ -> error(invalid_args)
@@ -233,14 +196,3 @@ error(Reason) when is_atom(Reason) ->
 error(Reason) ->
     [{content, "application/json", json:encode({struct, [{status, "error"}, {reason, Reason}]})}].
 
-postvar(A, ip, Name) ->
-    case yaws_api:postvar(A, Name) of
-        {ok, IP} -> inet:getaddr(IP, inet);
-        E -> E
-    end;
-postvar(A, atom, Name) ->
-    case yaws_api:postvar(A, Name) of
-        {ok, Atom} -> {ok, list_to_atom(Atom)};
-        E -> E
-    end;
-postvar(A, _, Name) -> yaws_api:postvar(A, Name).
