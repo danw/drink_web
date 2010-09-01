@@ -861,7 +861,7 @@ drink.tabs.drink_machines = new (function() {
     
     this.user_update = function() {
         var drops = $('#drink_machines .slotaction_drop');
-        var admin = $('#drink_machines .slotaction_edit, #drink_machines .slotaction_disable, #drink_machines .machine_edit, #machine_add_link');
+        var admin = $('#drink_machines .slotaction_edit, #drink_machines .slotaction_disable, #drink_machines .machine_edit, #drink_machines .machine_remove, #machine_add_link');
         
         var userinfo = $('body').data('user');
         if(userinfo == undefined) return;
