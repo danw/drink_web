@@ -595,8 +595,8 @@ drink.tabs.drink_machines = new (function() {
                 dialogClass: 'ui-state-error',
                 buttons: {
                     'Delete Machine': function() {
-                        // TODO
                         $(this).dialog('close')
+                        delMachine(self.info.machineid);
                     },
                     Cancel: function() {
                         $(this).dialog('close')
@@ -616,7 +616,7 @@ drink.tabs.drink_machines = new (function() {
             machDom.hide('fade', function() { machDom.remove() });
             visible = false;
         }
-        
+
         this.updateInfo = function(info) {
             self.info = info;
 
@@ -809,7 +809,26 @@ drink.tabs.drink_machines = new (function() {
     var modMachine = function() {
         drink.log("Mod machine...");
     }
-    
+
+    var delMachine = function(machine) {
+        drink.log("Del machine " + machine);
+        drink.remoteCall({
+            command: 'delmachine',
+            args: {
+                machine: machine
+            },
+            success: function() {
+                /* bye */
+            },
+            error: function() {
+                alert("Error deleting machine");
+            },
+            ajaxOptions: {
+                type: 'POST'
+            }
+        });
+    }
+
     this.admin_required = false;
     
     this.show_tab = function() {

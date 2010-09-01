@@ -210,6 +210,14 @@ request(A, U, 'POST', addmachine) ->
     end;
 request(_, _, _, addmachine) -> error(wrong_method);
 
+request(A, U, 'POST', delmachine) ->
+    case postvar(A, atom, "machine") of
+        {ok, Machine} ->
+            api(U, delmachine, [{machine, Machine}]);
+        _ -> error(invalid_args)
+    end;
+request(_, _, _, delmachine) -> error(wrong_method);
+
 request(_, _, 'GET', _) ->
     error(unknown_path);
 request(_, _, 'POST', _) ->
