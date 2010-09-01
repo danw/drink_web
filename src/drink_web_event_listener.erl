@@ -135,7 +135,7 @@ encode_event(drink, {machine_added, Machine}) ->
                           {data, drink_json_api:machine_stat(false, Machine)}]});
 encode_event(drink, {machine_deleted, Machine}) ->
     json:encode({struct, [{event, "machine_deleted"},
-                          {data, {struct, [{machineid, atom_to_list(Machine#machine.machine)}]}}]});
+                          {data, {struct, [{machineid, atom_to_list(Machine)}]}}]});
 encode_event(drink, T = #temperature{}) ->
     json:encode({struct, [{event, "temperature"},
                           {data, {struct, [{machine, T#temperature.machine},

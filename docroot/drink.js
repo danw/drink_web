@@ -613,7 +613,8 @@ drink.tabs.drink_machines = new (function() {
         }
         
         this.remove = function(list) {
-            machDom.hide('fade', function() { machDom.remove() });
+            machDom.remove();
+            //machDom.hide('fade', function() { machDom.remove() });
             visible = false;
         }
 
@@ -844,6 +845,7 @@ drink.tabs.drink_machines = new (function() {
         $('body').bind('machine_deleted_event', function(e, machine) {
             if (machine.machineid in machine_list) {
                 machine_list[machine.machineid].remove();
+                delete machine_list[machine.machineid];
             }
         });
 
