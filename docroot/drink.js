@@ -838,8 +838,9 @@ drink.tabs.drink_machines = new (function() {
     }
     
     $(document).ready(function () {
-        $('body').bind('machine_added_event', function(e, data) {
-            // TODO: handle this
+        $('body').bind('machine_added_event', function(e, machine) {
+            machine_list[machine.machineid] = new Machine($('#machines'), machine);
+            self.user_update();
         });
 
         $('body').bind('machine_deleted_event', function(e, machine) {
