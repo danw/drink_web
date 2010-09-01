@@ -158,5 +158,5 @@ encode_user_changes([{del_ibutton, IButton}|T]) ->
     [{del_ibutton, IButton}] ++ encode_user_changes(T);
 encode_user_changes([{admin, Old, New}|T]) ->
     [{admin, {struct, [{old, Old}, {new, New}]}}] ++ encode_user_changes(T);
-encode_user_changes([H|T]) ->
+encode_user_changes([_|T]) ->
     [] ++ encode_user_changes(T).
