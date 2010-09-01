@@ -894,7 +894,9 @@ drink.tabs.drink_machines = new (function() {
         $('#machines_holder').append(m_a_link).append(m_a_dom);
         m_a_link.mouseover(function() { m_a_link.addClass('ui-state-hover') })
                 .mouseout(function () { m_a_link.removeClass('ui-state-hover') }).collapsible(m_a_dom);
-        
+
+        $('body').bind('user_changed', function(e, data) { self.user_update() });
+
         self.user_update();
     });
     
