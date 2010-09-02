@@ -56,7 +56,7 @@ handle_cast(_, State) ->
     {noreply, State}.
 
 handle_info({dw_event, drink, _FromPid, Event}, State) ->
-    Msg = encode_event(drink, Event),
+    Msg = encode_event(State#worker.userref, drink, Event),
     yaws_api:websocket_send(State#worker.socket, Msg),
     {noreply, State};
 handle_info({ok, WebSocket}, State) ->
@@ -121,35 +121,38 @@ handle_incoming_call(State, Data) ->
             error_logger:error_msg("Unknown message(Error ~p): ~p~n", [E, Data])
     end.
 
-encode_event(drink, MoneyLog = #money_log{}) ->
-    json:encode({struct, [{event, "money_log"},
-                          {data, {struct, [{username, MoneyLog#money_log.username},
-                                    {admin, MoneyLog#money_log.admin},
-                                    {amount, MoneyLog#money_log.amount},
-                                    {direction, atom_to_list(MoneyLog#money_log.direction)}]}}]});
-encode_event(drink, {user_changed, Username, Changes}) ->
-    json:encode({struct, [{event, "user_changed"},
-                          {data, {struct, [{username, Username}] ++ encode_user_changes(Changes)}}]});
-encode_event(drink, {machine_added, Machine}) ->
-    json:encode({struct, [{event, "machine_added"},
-                          {data, drink_json_api:machine_stat(false, Machine)}]});
-encode_event(drink, {machine_deleted, Machine}) ->
-    json:encode({struct, [{event, "machine_deleted"},
-                          {data, {struct, [{machineid, atom_to_list(Machine)}]}}]});
-encode_event(drink, T = #temperature{}) ->
-    json:encode({struct, [{event, "temperature"},
-                          {data, {struct, [{machine, T#temperature.machine},
-                                        %  {time, T#temperature.time},
-                                           {temperature, T#temperature.temperature}]}}]});
-encode_event(drink, D = #drop_log{}) ->
-    json:encode({struct, [{event, "drop_log"},
-                          {data, {struct, [{machine, D#drop_log.machine},
-                                           {slot, D#drop_log.slot},
-                                        %  {time, D#drop_log.time},
-                                        %  {status, D#drop_log.status},
-                                           {username, D#drop_log.username}]}}]});
-encode_event(drink, Event) ->
-    json:encode({struct, [{event, atom_to_list(element(1, Event))}]}).
+encode_event(UserRef, drink, Event) ->
+    case encode_event_data(UserRef, drink, Event) of
+        false ->
+            json:encode({struct, [{event, atom_to_list(element(1, Event))}]});
+        Data ->
+            json:encode({struct, [{event, atom_to_list(element(1, Event))},
+                                  {data, Data}]})
+    end.
+
+encode_event_data(UserRef, drink, MoneyLog = #money_log{}) ->
+    {struct, [{username, MoneyLog#money_log.username},
+              {admin, MoneyLog#money_log.admin},
+              {amount, MoneyLog#money_log.amount},
+              {direction, atom_to_list(MoneyLog#money_log.direction)}]};
+encode_event_data(UserRef, drink, {user_changed, Username, Changes}) ->
+    {struct, [{username, Username}] ++ encode_user_changes(Changes)};
+encode_event_data(UserRef, drink, {machine_added, Machine}) ->
+    drink_json_api:machine_stat(user_auth:can_admin(UserRef), Machine);
+encode_event_data(UserRef, drink, {machine_deleted, Machine}) ->
+    {struct, [{machineid, atom_to_list(Machine)}]};
+encode_event_data(UserRef, drink, T = #temperature{}) ->
+    {struct, [{machine, T#temperature.machine},
+             %{time, T#temperature.time},
+              {temperature, T#temperature.temperature}]};
+encode_event_data(UserRef, drink, D = #drop_log{}) ->
+    {struct, [{machine, D#drop_log.machine},
+              {slot, D#drop_log.slot},
+             %{time, D#drop_log.time},
+             %{status, D#drop_log.status},
+              {username, D#drop_log.username}]};
+encode_event_data(UserRef, drink, _) ->
+    false.
 
 encode_user_changes([]) -> [];
 encode_user_changes([{add_ibutton, IButton}|T]) ->
