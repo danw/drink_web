@@ -69,9 +69,9 @@ handle_info({tcp, _WebSocket, DataFrame}, State) ->
     handle_incoming_call(State, Data),
     {noreply, State};
 handle_info(discard, State) ->
-    {stop, discard, State};
+    {stop, {shutdown, discard}, State};
 handle_info({tcp_closed, WebSocket}, State = #worker{socket = WebSocket}) ->
-    {stop, tcp_closed, State};
+    {stop, {shutdown, tcp_closed}, State};
 handle_info({tcp_closed, _WebSocket}, State) ->
     error_logger:error_msg("Got tcp_closed for a socket we don't own!~n"),
     {noreply, State};
