@@ -173,6 +173,30 @@ request(A, U, 'POST', addmachine) ->
     end;
 request(_, _, _, addmachine) -> error(wrong_method);
 
+request(A, U, 'POST', modmachine) ->
+    case {yaws_api:postvar(A, "machine"),
+          yaws_api:postvar(A, "name"),
+          yaws_api:postvar(A, "password"),
+          yaws_api:postvar(A, "public_ip"),
+          yaws_api:postvar(A, "available_sensor"),
+          yaws_api:postvar(A, "machine_ip"),
+          yaws_api:postvar(A, "allow_connect"),
+          yaws_api:postvar(A, "admin_only")} of
+        {{ok, Atom},
+         {ok, Name},
+         {ok, Password},
+         {ok, PublicIP},
+         {ok, AvailableSensor},
+         {ok, MachineIP},
+         {ok, AllowConnect},
+         {ok, AdminOnly}} ->
+            api(U, modmachine, [{machine, Atom}, {name, Name}, {password, Password}, {public_ip, PublicIP},
+                {available_sensor, AvailableSensor}, {machine_ip, MachineIP}, {allow_connect, AllowConnect},
+                {admin_only, AdminOnly}]);
+        _ -> error(invalid_args)
+    end;
+request(_, _, _, modmachine) -> error(wrong_method);
+
 request(A, U, 'POST', delmachine) ->
     case yaws_api:postvar(A, "machine") of
         {ok, Machine} ->

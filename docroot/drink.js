@@ -65,6 +65,7 @@ drink.websocket = new (function() {
         var data = JSON.parse(evt.data);
         if ("event" in data) {
             drink.log("WS Got event: " + data.event, data.data);
+            drink.log(data.data);
             $('body').trigger(data.event + '_event', data.data);
         } else if("response" in data) {
             if (data.response in self.requests) {
@@ -550,6 +551,7 @@ drink.tabs.drink_machines = new (function() {
     var Machine = function(machineList, info) {
         var self = this;
         var visible = false;
+        this.opened = true;
         
         var Slot = function(slot) {
             var machine = self;
@@ -568,12 +570,13 @@ drink.tabs.drink_machines = new (function() {
             <tbody></tbody></table></div>');
         
         var editDom = $('<form> \
-            ID: <input type="text" class="machine_edit_id" /> Name: <input type="text" class="machine_edit_name" /> \
+            ID: <input type="text" class="machine_edit_id" disabled="disabled" /> Name: <input type="text" class="machine_edit_name" /> \
             Password: <input type="text" class="machine_edit_password" /><br /> \
             Public IP: <input type="text" class="machine_edit_public_ip" /> Machine IP: <input type="text" class="machine_edit_machine_ip" /><br /> \
             <input type="checkbox" class="machine_edit_available_sensor" value="true">Available Sensor</input> \
             <input type="checkbox" class="machine_edit_allow_connect" value="true">Allow Connect</input> \
             <input type="checkbox" class="machine_edit_admin_only" value="true">Admin Only</input><br /> \
+            <input type="submit" value="Update Machine" /> \
             </form>');
         
         editDom.submit(modMachine);
@@ -584,6 +587,7 @@ drink.tabs.drink_machines = new (function() {
                                         .collapsible(machDom.filter('.machine_contents'));
         machDom.find('.machine_remove').button({text: false, icons: { primary: 'ui-icon-trash' }})
         machDom.find('.machine_edit').button({text: false, icons: { primary: 'ui-icon-pencil' }}).click(function() {
+            self.open();
             machDom.find('.machine_edit_form').toggle();
             return false;
         });
@@ -618,17 +622,26 @@ drink.tabs.drink_machines = new (function() {
             visible = false;
         }
 
+        this.open = function() {
+            if (this.opened) return;
+            //machDom.filter('.machine_contents').show();
+            machDom.filter('.machine_title').click().removeClass('ui-corner-bottom');
+            this.opened = true;
+        }
+
+        this.close = function() {
+            if (!this.opened) return;
+            //machDom.filter('.machine_contents').hide();
+            machDom.filter('.machine_title').click().addClass('ui-corner-bottom');
+            this.opened = false;
+        }
+
         this.updateInfo = function(info) {
+            drink.log(info);
             self.info = info;
 
             machDom.find('.machine_title_span').text(info.name);
             
-            if(!info.connected)
-            {
-                machDom.filter('.machine_contents').hide()
-                machDom.filter('.machine_title').addClass('ui-corner-bottom');
-            }
-
             editDom.find('.machine_edit_id').val(info.machineid);
             editDom.find('.machine_edit_name').val(info.name);
             editDom.find('.machine_edit_password').val(info.password);
@@ -655,6 +668,7 @@ drink.tabs.drink_machines = new (function() {
         }
 
         this.updateInfo(info);
+        if(!info.connected) this.close();
         this.add(machineList);
 
         return this;
@@ -793,7 +807,7 @@ drink.tabs.drink_machines = new (function() {
                 admin_only: $('.machine_add_admin_only').val() == "on"
             },
             success: function() {
-                $('#machine_add_form').hide();
+                $('#machine_add_link').click();
                 $('#machine_add_form input').val(false);
                 //self.refresh();
             },
@@ -809,6 +823,28 @@ drink.tabs.drink_machines = new (function() {
 
     var modMachine = function() {
         drink.log("Mod machine...");
+        var self = this;
+        drink.remoteCall({
+            command: 'modmachine',
+            args: {
+                machine: $(self).find('.machine_edit_id').val(),
+                password: $(self).find('.machine_edit_password').val(),
+                name: $(self).find('.machine_edit_name').val(),
+                public_ip: $(self).find('.machine_edit_public_ip').val(),
+                available_sensor: $(self).find('.machine_edit_available_sensor').val() == "on",
+                machine_ip: $(self).find('.machine_edit_machine_ip').val(),
+                allow_connect: $(self).find('.machine_edit_allow_connect').val() == "on",
+                admin_only: $(self).find('.machine_edit_admin_only').val() == "on"
+            },
+            success: function() {},
+            error: function() {
+                alert("Error modding machine");
+            },
+            ajaxOptions: {
+                type: 'POST'
+            }
+        });
+        return false;
     }
 
     var delMachine = function(machine) {
@@ -841,6 +877,16 @@ drink.tabs.drink_machines = new (function() {
         $('body').bind('machine_added_event', function(e, machine) {
             machine_list[machine.machineid] = new Machine($('#machines'), machine);
             self.user_update();
+        });
+
+        $('body').bind('machine_modified_event', function(e, machine) {
+            drink.log(machine);
+            if (machine.machineid in machine_list) {
+                machine_list[machine.machineid].updateInfo(machine);
+            } else {
+                machine_list[machine.machineid] = new Machine($('#machines'), machine);
+                self.user_update();
+            }
         });
 
         $('body').bind('machine_deleted_event', function(e, machine) {
