@@ -64,12 +64,12 @@ drink.websocket = new (function() {
     this.gotMessage = function(evt) {
         var data = JSON.parse(evt.data);
         if ("event" in data) {
-            console.log("WS Got event: " + data.event, data.data);
+            drink.log("WS Got event: " + data.event, data.data);
             $('body').trigger(data.event + '_event', data.data);
         } else if("response" in data) {
             if (data.response in self.requests) {
                 if (data.status == "error") {
-                    console.log("WS Got error: " + data.reason);
+                    drink.log("WS Got error: " + data.reason);
                     if ("error" in self.requests[data.response])
                         self.requests[data.response].error(data.reason);
                 } else {
@@ -77,16 +77,16 @@ drink.websocket = new (function() {
                 }
                 delete self.requests[data.response];
             } else {
-                console.log("Got a response to an unknown request!");
+                drink.log("Got a response to an unknown request!");
             }
         } else {
-            console.log("WS Unknown message");
+            drink.log("WS Unknown message");
         }
     }
     
     this.remoteCall = function(options) {
         if (this.ws === false) {
-            console.log("WTF, no open websocket, why am i being called");
+            drink.log("WTF, no open websocket, why am i being called");
             return;
         }
         request = { request: options.command, id: Math.floor(Math.random() * 10000000), args: options.args }
@@ -96,20 +96,20 @@ drink.websocket = new (function() {
     
     this.init = function() {
         if (!("WebSocket" in window)) {
-            console.log("Upgrade to Chrome or another browser that support websockets!");
+            drink.log("Upgrade to Chrome or another browser that support websockets!");
             return;
         }
         
         // TODO: dynamic websocket address
         self.ws = new WebSocket("ws://mini.danw.org:42080/drink/events");
         self.ws.onopen = function() {
-            console.log("WS Got open event");
+            drink.log("WS Got open event");
             self.use = true;
             self.backoff_delay = backoff_orig;
         }
         self.ws.onmessage = self.gotMessage;
         self.ws.onclose = function() {
-            console.log("WS Got close event");
+            drink.log("WS Got close event");
             self.use = false;
             self.ws = false;
             // TODO: go through self.requests and error all of them
@@ -124,10 +124,10 @@ drink.websocket = new (function() {
 
 drink.remoteCall = function(options) {
     if(drink.websocket.use) {
-        console.log("RC Using Websocket");
+        drink.log("RC Using Websocket");
         drink.websocket.remoteCall(options);
     } else {
-        console.log("RC Using Ajax");
+        drink.log("RC Using Ajax");
         drink.ajax(options);
     }
 }
@@ -853,7 +853,7 @@ drink.tabs.drink_machines = new (function() {
         $('body').bind('machine_event', function(e, machine) {
             if (machine.machineid in machine_list) {
                 machine_list[machine.machineid].updateInfo(machine);
-                console.log(machine_list[machine.machineid].dom);
+                drink.log(machine_list[machine.machineid].dom);
                 machine_list[machine.machineid].dom.effect('highlight');
             } else {
                 machine_list[machine.machineid] = new Machine(machinelist, machine);
