@@ -217,6 +217,7 @@ $(document).ready(function() {
             },
             error: function() {
                 drink.log("Error getting current user");
+                // TODO: deal with non-webauth logins?
                 // Refresh the page, hopefully making the user re-webauth if necessary
                 location.reload(true);
             }
@@ -267,15 +268,6 @@ drink.tab = new (function() {
     var anchors;
     var selectedTab;
 
-    var tabIndex = function(idx) {
-        if (typeof idx == 'string') {
-            return anchors.index(anchors.filter('[href$=' + idx + ']'));
-        } else {
-            var hash = anchors.eq(idx)[0].hash;
-            return hash.slice(1, hash.length);
-        }
-    }
-
     $(document).ready(function () {
         anchors = $('#tabs ul:first li:has(a[href])').map(function() { return $('a', this)[0] });
         tab_elem = $('#tabs').tabs( {
@@ -286,33 +278,34 @@ drink.tab = new (function() {
         tab_elem.unbind('tabsshow', tabSelected);
         
         $('body').bind('user_changed', function(e, user) {
-            tab_elem.tabs('options', 'disabled', []);
             for(var tab in drink.tabs) {
                 if(drink.tabs[tab].admin_required && !user.admin) {
-                    idx = tabIndex(tab);
-                    if(idx == -1)
-                        drink.log("Broken! can't find tab");
-
-                    if(selectedTab == idx) {
+                    if(selectedTab == tab) {
                         // TODO: figure out first legit tab to select
-                        tab_elem.tabs('select', 0);
+                        tab_elem.tabs('select', 'drink_machines');
                     }
 
-                    tab_elem.tabs('disable', idx );
+                    tab_elem.tabs('disable', tab);
+                }
+                else
+                {
+                    tab_elem.tabs('enable', tab);
                 }
             }
         });
     });
     
     var tabSelected = function(e, ui) {
-        var newTab = tabIndex(ui.index);//ui.tab.hash.slice(1, ui.tab.hash.length)
-        
-        if(drink.tabs[self.selectedTab] && drink.tabs[self.selectedTab].hide_tab && typeof drink.tabs[self.selectedTab].hide_tab == 'function')
-            drink.tabs[self.selectedTab].hide_tab();
+        var newTab = ui.tab.hash.slice(1, ui.tab.hash.length);
+     
+        drink.log("Going from '" + selectedTab + "' to '" + newTab + "'");
+
+        if(drink.tabs[selectedTab] && drink.tabs[selectedTab].hide_tab && typeof drink.tabs[selectedTab].hide_tab == 'function')
+            drink.tabs[selectedTab].hide_tab();
         if(drink.tabs[newTab] && drink.tabs[newTab].show_tab && typeof drink.tabs[newTab].show_tab == 'function')
             drink.tabs[newTab].show_tab();
-      
-        self.selectedTab = newTab;
+     
+        selectedTab = newTab;
  
         return true;
     }
@@ -472,6 +465,7 @@ drink.tabs.logs = new (function () {
     $(document).ready(function() {
         $('body').bind('user_changed', function(e, user) {
             last_update = false;
+            // TODO fix
             if(drink.tabs.selectedTab == 'logs')
                 self.refresh();
         });
