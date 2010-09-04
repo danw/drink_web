@@ -65,8 +65,8 @@ handle_info({ok, WebSocket}, State) ->
     yaws_api:websocket_send(WebSocket, json:encode({struct, [{event, "hello"}]})),
     {noreply, State#worker{socket = WebSocket}};
 handle_info({tcp, _WebSocket, DataFrame}, State) ->
-    Data = yaws_api:websocket_unframe_data(DataFrame),
-    handle_incoming_call(State, Data),
+    Data = yaws_websockets:unframe_all(DataFrame, []),
+    [ handle_incoming_call(State, Packet) || Packet <- Data ],
     {noreply, State};
 handle_info(discard, State) ->
     {stop, {shutdown, discard}, State};
