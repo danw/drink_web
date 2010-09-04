@@ -685,13 +685,9 @@ drink.tabs.drink_machines = new (function() {
             editDom.find('.machine_edit_admin_only').attr('checked', info.admin_only);
             
             for(var slotnum in info.slots) {
-                // TODO: this should be on the server probably
-                info.slots[slotnum].num = slotnum;
                 if (slotnum in slots) {
-                    drink.log("Updating " + slotnum);
                     slots[slotnum].updateInfo(info.slots[slotnum]);
                 } else {
-                    drink.log("Adding " + slotnum);
                     slots[slotnum] = new Slot(info.slots[slotnum]);
                 }
             }
