@@ -63,16 +63,16 @@ drink.websocket = new (function() {
     
     this.gotMessage = function(evt) {
         var data = JSON.parse(evt.data);
+        drink.log(data);
         if ("event" in data) {
             drink.log("WS Got event: " + data.event, data.data);
-            drink.log(data.data);
             $('body').trigger(data.event + '_event', data.data);
         } else if("response" in data) {
             if (data.response in self.requests) {
                 if (data.status == "error") {
-                    drink.log("WS Got error: " + data.reason);
+                    drink.log("WS Got error: " + data.reason, data.data);
                     if ("error" in self.requests[data.response])
-                        self.requests[data.response].error(data.reason);
+                        self.requests[data.response].error(data.reason, data.data);
                 } else {
                     self.requests[data.response].success(data.data);
                 }
@@ -811,8 +811,12 @@ drink.tabs.drink_machines = new (function() {
                 $('#machine_add_form input').val(false);
                 //self.refresh();
             },
-            error: function() {
-                alert("Error adding machine");
+            error: function(reason, data) {
+                // TODO: handle invalid_arg
+                if (reason == "invalid_arg")
+                    alert("Invalid argument: " + data.arg);
+                else
+                    alert("Error adding machine: " + reason);
             },
             ajaxOptions: {
                 type: 'POST'
@@ -837,7 +841,8 @@ drink.tabs.drink_machines = new (function() {
                 admin_only: $(self).find('.machine_edit_admin_only').val() == "on"
             },
             success: function() {},
-            error: function() {
+            error: function(reason, data) {
+                // TODO: handle invalid_arg
                 alert("Error modding machine");
             },
             ajaxOptions: {

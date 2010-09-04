@@ -109,6 +109,8 @@ handle_incoming_call(State, Data) ->
                             json:encode({struct, [{response, Id}, {status, "ok"}, {data, RespJson}]});
                         {error, Reason} when is_atom(Reason) ->
                             json:encode({struct, [{response, Id}, {status, "error"}, {reason, atom_to_list(Reason)}]});
+                        {error, {invalid_arg, Arg}} when is_atom(Arg) ->
+                            json:encode({struct, [{response, Id}, {status, "error"}, {reason, "invalid_arg"}, {data, {struct, [{arg, atom_to_list(Arg)}]}}]});
                         Er ->
                             error_logger:error_msg("Got unknown result: ~p~n", [Er]),
                             json:encode({struct, [{response, Id}, {status, "error"}, {reason, "unknown"}]})
