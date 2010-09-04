@@ -545,12 +545,54 @@ drink.tabs.drink_machines = new (function() {
     var Machine = function(machineList, info) {
         var self = this;
         var visible = false;
+        var slots = []
+        var slots_dom = false;
         
-        var Slot = function(slot) {
+        var Slot = function(info) {
             var machine = self;
             var self = this;
-            
-            
+           
+            var slotDom = $('<tr><td class="slot_num"></td> \
+                                 <td class="slot_name"></td> \
+                                 <td class="slot_price"></td> \
+                                 <td class="slot_available"></td> \
+                                 <td class="slot_actions"> \
+                                    <a href="#" class="slot_action_drop">Drop</a> \
+                                    <a href="#" class="slot_action_edit">Edit</a> \
+                                    <a href="#" class="slot_action_disable">Disable</a> \
+                                 </td></tr>');
+
+            slotDom.find('.slot_action_drop').click(function() { self.drop(); return false; });
+            slotDom.find('.slot_action_edit').click(function() { self.edit(); return false; });
+            slotDom.find('.slot_action_disable').click(function() { self.disable(); return false; });
+
+            this.updateInfo = function(info) {
+                self.info = info;
+
+                slotDom.find('.slot_num').text(info.num);
+                slotDom.find('.slot_name').text(info.name);
+                slotDom.find('.slot_price').text(info.price);
+                slotDom.find('.slot_available').text(pretty_available(info.available));
+            }
+
+            this.userChanged = function() {
+                //TODO droppable
+            }
+
+            this.drop = function() {
+            }
+
+            this.edit = function() {
+            }
+
+            this.disable = function() {
+            }
+
+            this.updateInfo(info);
+            slots_dom.append(slotDom);
+            self.dom = slotDom;
+
+            return this;
         }
         
         var machDom = $('<div class="machine_title ui-helper-reset ui-helper-clearfix ui-state-active ui-widget-header ui-corner-top"> \
@@ -575,6 +617,7 @@ drink.tabs.drink_machines = new (function() {
         editDom.submit(modMachine);
         machDom.find('.machine_edit_form').append(editDom);
         machDom.find('.machine_edit_form').hide();
+        slots_dom = machDom.find('tbody');
         machDom.filter('.machine_title').mouseover(function() { $(this).addClass('ui-state-hover') })
                                         .mouseout(function () { $(this).removeClass('ui-state-hover') })
                                         .collapsible(machDom.filter('.machine_contents'));
@@ -628,7 +671,6 @@ drink.tabs.drink_machines = new (function() {
         }
 
         this.updateInfo = function(info) {
-            drink.log(info);
             self.info = info;
 
             machDom.find('.machine_title_span').text(info.name);
@@ -642,11 +684,17 @@ drink.tabs.drink_machines = new (function() {
             editDom.find('.machine_edit_allow_connect').attr('checked', info.allow_connect);
             editDom.find('.machine_edit_admin_only').attr('checked', info.admin_only);
             
-            // var slots = m.find('tbody');
-            // for(var slotnum in machine.slots) {
-            //     machine.slots[slotnum].num = slotnum;
-            //     slots.append(slot_dom(machine, machine.slots[slotnum]));
-            // }
+            for(var slotnum in info.slots) {
+                // TODO: this should be on the server probably
+                info.slots[slotnum].num = slotnum;
+                if (slotnum in slots) {
+                    drink.log("Updating " + slotnum);
+                    slots[slotnum].updateInfo(info.slots[slotnum]);
+                } else {
+                    drink.log("Adding " + slotnum);
+                    slots[slotnum] = new Slot(info.slots[slotnum]);
+                }
+            }
         }
 
         this.updateInfo(info);
@@ -897,14 +945,14 @@ drink.tabs.drink_machines = new (function() {
     });
     
     this.user_update = function() {
-        var drops = $('#drink_machines .slotaction_drop');
-        var admin = $('#drink_machines .slotaction_edit, #drink_machines .slotaction_disable, #drink_machines .machine_edit, #drink_machines .machine_remove, #machine_add_link');
+        var drops = $('#drink_machines .slot_action_drop');
+        var admin = $('#drink_machines .slot_action_edit, #drink_machines .slot_action_disable, #drink_machines .machine_edit, #drink_machines .machine_remove, #machine_add_link');
         
         var userinfo = $('body').data('user');
         if(userinfo == undefined) return;
         
         // todo - droppable
-        drops.each(function() {
+        /*drops.each(function() {
             var row = $(this).parents('tr').eq(0);
             var machine = machine_info[$(row).data("machine")];
             var slot = machine.slots[$(row).data("slotnum")];
@@ -919,7 +967,7 @@ drink.tabs.drink_machines = new (function() {
                 $(this).show();
             else
                 $(this).hide();
-        });
+        });*/
         
         if(userinfo.admin) {
             admin.show();
