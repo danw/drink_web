@@ -647,18 +647,9 @@ drink.tabs.drink_machines = new (function() {
             editDom.find('.machine_edit_password').val(info.password);
             editDom.find('.machine_edit_public_ip').val(info.public_ip);
             editDom.find('.machine_edit_machine_ip').val(info.machine_ip);
-            if(info.available_sensor)
-                editDom.find('.machine_edit_available_sensor').attr('checked', 'checked');
-            else
-                editDom.find('.machine_edit_available_sensor');
-            if(info.allow_connect)
-                editDom.find('.machine_edit_allow_connect').attr('checked', 'checked');
-            else
-                editDom.find('.machine_edit_allow_connect');
-            if(info.admin_only)
-                editDom.find('.machine_edit_admin_only').attr('checked', 'checked');
-            else
-                editDom.find('.machine_edit_admin_only');
+            editDom.find('.machine_edit_available_sensor').attr('checked', info.available_sensor);
+            editDom.find('.machine_edit_allow_connect').attr('checked', info.allow_connect);
+            editDom.find('.machine_edit_admin_only').attr('checked', info.admin_only);
             
             // var slots = m.find('tbody');
             // for(var slotnum in machine.slots) {
@@ -801,14 +792,15 @@ drink.tabs.drink_machines = new (function() {
                 password: $('.machine_add_password').val(),
                 name: $('.machine_add_name').val(),
                 public_ip: $('.machine_add_public_ip').val(),
-                available_sensor: $('.machine_add_available_sensor').val() == "on",
+                available_sensor: $('.machine_add_available_sensor').attr('checked'),
                 machine_ip: $('.machine_add_machine_ip').val(),
-                allow_connect: $('.machine_add_allow_connect').val() == "on",
-                admin_only: $('.machine_add_admin_only').val() == "on"
+                allow_connect: $('.machine_add_allow_connect').attr('checked'),
+                admin_only: $('.machine_add_admin_only').attr('checked')
             },
             success: function() {
                 $('#machine_add_link').click();
-                $('#machine_add_form input').val(false);
+                $('#machine_add_form input[type=text]').val("");
+                $('#machine_add_form input[type=checkbox]').attr('checked', true);
                 //self.refresh();
             },
             error: function(reason, data) {
@@ -835,10 +827,10 @@ drink.tabs.drink_machines = new (function() {
                 password: $(self).find('.machine_edit_password').val(),
                 name: $(self).find('.machine_edit_name').val(),
                 public_ip: $(self).find('.machine_edit_public_ip').val(),
-                available_sensor: $(self).find('.machine_edit_available_sensor').val() == "on",
+                available_sensor: $(self).find('.machine_edit_available_sensor').attr('checked'),
                 machine_ip: $(self).find('.machine_edit_machine_ip').val(),
-                allow_connect: $(self).find('.machine_edit_allow_connect').val() == "on",
-                admin_only: $(self).find('.machine_edit_admin_only').val() == "on"
+                allow_connect: $(self).find('.machine_edit_allow_connect').attr('checked'),
+                admin_only: $(self).find('.machine_edit_admin_only').attr('checked')
             },
             success: function() {},
             error: function(reason, data) {
