@@ -545,7 +545,6 @@ drink.tabs.drink_machines = new (function() {
     var Machine = function(machineList, info) {
         var self = this;
         var visible = false;
-        this.opened = true;
         
         var Slot = function(slot) {
             var machine = self;
@@ -554,7 +553,7 @@ drink.tabs.drink_machines = new (function() {
             
         }
         
-        var machDom = $('<div class="machine_title ui-helper-reset ui-helper-clearfix ui-state-default ui-widget-header ui-corner-top"> \
+        var machDom = $('<div class="machine_title ui-helper-reset ui-helper-clearfix ui-state-active ui-widget-header ui-corner-top"> \
                 <a href="#" class="machine_remove" style="float:right" title="Delete">remove</a> \
                 <a href="#" class="machine_edit" style="float:right" title="Edit">edit</a> \
                 <span class="machine_title_span ui-helper-reset"></span></div> \
@@ -617,17 +616,15 @@ drink.tabs.drink_machines = new (function() {
         }
 
         this.open = function() {
-            if (this.opened) return;
+            if (machDom.filter('.machine_title').hasClass('ui-state-active')) return;
             //machDom.filter('.machine_contents').show();
             machDom.filter('.machine_title').click().removeClass('ui-corner-bottom');
-            this.opened = true;
         }
 
         this.close = function() {
-            if (!this.opened) return;
+            if (!machDom.filter('.machine_title').hasClass('ui-state-active')) return;
             //machDom.filter('.machine_contents').hide();
             machDom.filter('.machine_title').click().addClass('ui-corner-bottom');
-            this.opened = false;
         }
 
         this.updateInfo = function(info) {
