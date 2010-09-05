@@ -524,11 +524,13 @@ drink.tabs.drink_machines = new (function() {
                                     <a href="#" class="slot_action_drop">Drop</a> \
                                     <a href="#" class="slot_action_edit">Edit</a> \
                                     <a href="#" class="slot_action_disable">Disable</a> \
+                                    <a href="#" class="slot_action_delete">Delete</a> \
                                  </td></tr>');
 
             slotDom.find('.slot_action_drop').click(function() { self.drop(); return false; });
             slotDom.find('.slot_action_edit').click(function() { self.edit(); return false; });
             slotDom.find('.slot_action_disable').click(function() { self.disable(); return false; });
+            slotDom.find('.slot_action_delete').click(function() { self.slot_delete(); return false; });
 
             this.updateInfo = function(info) {
                 self.info = info;
@@ -616,13 +618,25 @@ drink.tabs.drink_machines = new (function() {
                 drink.remoteCall({
                     command: 'setslot',
                     args: { machine: machine.info.machineid, slot: self.info.num, name: name,
-                            price: price, avail: available, disabled: disabled },
+                            price: price, available: available, disabled: disabled },
                     success: function() {},
                     error: function() {},
-                    ajaxOptions: {
-                        type: 'POST'
-                    }
+                    ajaxOptions: { type: 'POST' }
                 });
+            }
+
+            this.slot_delete = function() {
+                drink.remoteCall({
+                    command: 'delslot',
+                    args: { machine: machine.info.machineid, slot: self.info.num },
+                    success: function() {},
+                    error: function() {},
+                    ajaxOptions: { type: 'POST' }
+                });
+            }
+
+            this.remove = function() {
+                slotDom.remove();
             }
 
             this.updateInfo(info);
@@ -638,7 +652,8 @@ drink.tabs.drink_machines = new (function() {
             <div class="machine_contents ui-helper-reset ui-widget-content ui-corner-bottom"> \
             <div class="machine_edit_form"></div>\
             <table><thead><tr><th>Slot Num</th><th>Name</th><th>Price</th><th>Available</th><th>Actions</th></tr></thead> \
-            <tbody></tbody></table></div>');
+            <tbody></tbody></table> \
+            <a href="#" class="machine_add_slot">Add Slot</a></div>');
         
         var editDom = $('<form> \
             ID: <input type="text" class="machine_edit_id" disabled="disabled" /> Name: <input type="text" class="machine_edit_name" /> \
@@ -680,7 +695,34 @@ drink.tabs.drink_machines = new (function() {
                 }
             });
             return false;
-        })
+        });
+        machDom.find('.machine_add_slot').click(function() {
+            var num = prompt("Slot Num");
+            if (num == null || num == '') return;
+            num = new Number(num);
+            if (num == NaN || num < 0) return;
+            var name = prompt("Name");
+            if (name == null || name == '') return;
+            var price = prompt("Price");
+            if (price == null || price == '') return;
+            price = new Number(price);
+            if (price == NaN || price < 0) return;
+            var available = prompt("Available");
+            if (available == null || available == '') return;
+            available = new Number(available);
+            if (available == NaN || available < 0) return;
+            
+            drink.remoteCall({
+                command: 'addslot',
+                args: { machine: self.info.machineid, slot: num, name: name,
+                        price: price, available: available, disabled: true },
+                success: function() {},
+                error: function() {},
+                ajaxOptions: { type: 'POST' }
+            });
+
+            return false;
+        });
         
         this.add = function(list) {
             machineList.append(machDom);
@@ -739,6 +781,10 @@ drink.tabs.drink_machines = new (function() {
                     self.slots[slotnum] = new Slot(self, info.slots[slotnum]);
                 }
             }
+        }
+
+        this.slot_added = function(slot) {
+            self.slots[slot.num] = new Slot(self, slot);
         }
 
         this.updateInfo(info);
@@ -911,9 +957,19 @@ drink.tabs.drink_machines = new (function() {
             }
         });
 
+        $('body').bind('slot_added_event', function(e, data) {
+            if (data.machineid in machine_list) {
+                if (data.slot.num in machine_list[data.machineid].slots) {
+                    drink.log("Slot added that we already know about");
+                } else {
+                    machine_list[data.machineid].slot_added(data.slot);
+                }
+            } else {
+                drink.log("Slot added on machine that we don't know");
+            }
+        });
+
         $('body').bind('slot_modified_event', function(e, data) {
-            drink.log("Got slot_modified event");
-            drink.log(data);
             if (data.machineid in machine_list) {
                 if (data.slot.num in machine_list[data.machineid].slots) {
                     machine_list[data.machineid].slots[data.slot.num].updateInfo(data.slot);
@@ -925,10 +981,21 @@ drink.tabs.drink_machines = new (function() {
             }
         });
 
+        $('body').bind('slot_deleted_event', function(e, data) {
+            if (data.machineid in machine_list) {
+                if (data.slot in machine_list[data.machineid].slots) {
+                    machine_list[data.machineid].slots[data.slot].remove();
+                } else {
+                    drink.log("Slot deleted that we don't know about");
+                }
+            } else {
+                drink.log("Slot deleted on machine that we don't know");
+            }
+        });
     });
     
     this.user_update = function() {
-        var admin = $('#drink_machines .slot_action_edit, #drink_machines .slot_action_disable, #drink_machines .machine_edit, #drink_machines .machine_remove, #machine_add_link');
+        var admin = $('#drink_machines .slot_action_edit, #drink_machines .slot_action_disable, #drink_machines .slot_action_delete, #drink_machines .machine_edit, #drink_machines .machine_remove, #machine_add_link, #drink_machines .machine_add_slot');
         
         var userinfo = $('body').data('user');
         if (userinfo == null) return;

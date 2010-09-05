@@ -117,6 +117,20 @@ request(A, U, 'POST', moduser) ->
     end;
 request(_, _, _, moduser) -> error(wrong_method);
 
+request(A, U, 'POST', addslot) ->
+    case {yaws_api:postvar(A, "machine"),
+          yaws_api:postvar(A, "slot"),
+          yaws_api:postvar(A, "name"),
+          yaws_api:postvar(A, "price"),
+          yaws_api:postvar(A, "available"),
+          yaws_api:postvar(A, "disabled")} of
+        {{ok, Machine}, {ok, Slot}, {ok, Name}, {ok, Price}, {ok, Avail}, {ok, Disabled}} ->
+            api(U, addslot, [{machine, Machine}, {slot, Slot}, {name, Name}, {price, Price}, {available, Avail}, {disabled, Disabled}]);
+        _ ->
+            error(invalid_args)
+    end;
+request(_, _, _, addslot) -> error(wrong_method);
+
 request(A, U, 'POST', setslot) ->
     case {yaws_api:postvar(A, "machine"), 
           yaws_api:postvar(A, "slot"),
@@ -130,6 +144,16 @@ request(A, U, 'POST', setslot) ->
             error(invalid_args)
     end;
 request(_, _, _, setslot) -> error(wrong_method);
+
+request(A, U, 'POST', delslot) ->
+    case {yaws_api:postvar(A, "machine"),
+          yaws_api:postvar(A, "slot")} of
+        {{ok, Machine}, {ok, Slot}} ->
+            api(U, delslot, [{machine, Machine}, {slot, Slot}]);
+        _ ->
+            error(invalid_args)
+    end;
+request(_, _, _, delslot) -> error(wrong_method);
 
 request(A, U, 'GET', temperatures) ->
     case {yaws_api:queryvar(A, "from"), yaws_api:queryvar(A, "length")} of

@@ -150,8 +150,12 @@ encode_event_data(UserRef, drink, {machine_connected, Machine}) ->
     {struct, [{machineid, atom_to_list(Machine)}]};
 encode_event_data(UserRef, drink, {machine_disconnected, Machine}) ->
     {struct, [{machineid, atom_to_list(Machine)}]};
+encode_event_data(UserRef, drink, {slot_added, Machine, Slot}) ->
+    {struct, [{machineid, atom_to_list(Machine#machine.machine)}, {slot, drink_json_api:slot_stat(Slot)}]};
 encode_event_data(UserRef, drink, {slot_modified, Machine, Slot}) ->
     {struct, [{machineid, atom_to_list(Machine#machine.machine)}, {slot, drink_json_api:slot_stat(Slot)}]};
+encode_event_data(UserRef, drink, {slot_deleted, Machine, Slot}) ->
+    {struct, [{machineid, atom_to_list(Machine#machine.machine)}, {slot, Slot}]};
 encode_event_data(UserRef, drink, T = #temperature{}) ->
     {struct, [{machine, atom_to_list(T#temperature.machine)},
              %{time, T#temperature.time},
