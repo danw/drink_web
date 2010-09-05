@@ -298,8 +298,6 @@ drink.tab = new (function() {
     var tabSelected = function(e, ui) {
         var newTab = ui.tab.hash.slice(1, ui.tab.hash.length);
      
-        drink.log("Going from '" + selectedTab + "' to '" + newTab + "'");
-
         if(drink.tabs[selectedTab] && drink.tabs[selectedTab].hide_tab && typeof drink.tabs[selectedTab].hide_tab == 'function')
             drink.tabs[selectedTab].hide_tab();
         if(drink.tabs[newTab] && drink.tabs[newTab].show_tab && typeof drink.tabs[newTab].show_tab == 'function')
