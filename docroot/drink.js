@@ -244,10 +244,7 @@ $(document).ready(function() {
     $('body').bind('money_log_event', function(e, data) {
         var user = $('body').data('user');
         if (user.username != data.username) return;
-        if (data.direction == "in")
-            user.credits += data.amount;
-        else
-            user.credits -= data.amount;
+        user.credits += data.amount;
         $('body').data('user', user).trigger('user_changed', user);
     });
 
