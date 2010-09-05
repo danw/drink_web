@@ -739,6 +739,18 @@ drink.tabs.drink_machines = new (function() {
             machDom.filter('.machine_title').click().addClass('ui-corner-bottom');
         }
 
+        this.connected = function() {
+            if (self.info.connected) return;
+            self.info.connected = true;
+            this.open();
+        }
+
+        this.disconnected = function() {
+            if (!self.info.connected) return;
+            self.info.connected = false;
+            this.close();
+        }
+
         this.updateInfo = function(info) {
             self.info = info;
 
@@ -917,6 +929,18 @@ drink.tabs.drink_machines = new (function() {
             if (machine.machineid in machine_list) {
                 machine_list[machine.machineid].remove();
                 delete machine_list[machine.machineid];
+            }
+        });
+
+        $('body').bind('machine_connected_event', function(e, machine) {
+            if (machine.machineid in machine_list) {
+                machine_list[machine.machineid].connected();
+            }
+        });
+
+        $('body').bind('machine_disconnected_event', function(e, machine) {
+            if (machine.machineid in machine_list) {
+                machine_list[machine.machineid].disconnected();
             }
         });
 

@@ -146,6 +146,10 @@ encode_event_data(UserRef, drink, {machine_modified, Machine}) ->
     drink_json_api:machine_stat(user_auth:can_admin(UserRef), Machine#machine.machine);
 encode_event_data(UserRef, drink, {machine_deleted, Machine}) ->
     {struct, [{machineid, atom_to_list(Machine)}]};
+encode_event_data(UserRef, drink, {machine_connected, Machine}) ->
+    {struct, [{machineid, atom_to_list(Machine)}]};
+encode_event_data(UserRef, drink, {machine_disconnected, Machine}) ->
+    {struct, [{machineid, atom_to_list(Machine)}]};
 encode_event_data(UserRef, drink, {slot_modified, Machine, Slot}) ->
     {struct, [{machineid, atom_to_list(Machine#machine.machine)}, {slot, drink_json_api:slot_stat(Slot)}]};
 encode_event_data(UserRef, drink, T = #temperature{}) ->
