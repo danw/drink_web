@@ -1056,10 +1056,6 @@ drink.tabs.user_admin = new (function() {
     }
 
     var got_user_info = function(userinfo) {
-        if($('body').data('user').username == userinfo.username) {
-        //    $('body').data('user', userinfo).trigger('user_changed', userinfo);
-        }
-        
         current_edit_user = userinfo;
 
         $('#user_admin_user_username').text(current_edit_user.username);
@@ -1148,7 +1144,7 @@ drink.tabs.user_admin = new (function() {
         drink.remoteCall({
             command: 'moduser',
             args: { username: username, attr: attr, value: value, reason: reason },
-            success: got_user_info,
+            success: function() {},
             ajaxOptions: {
                 type: 'POST'
             }
@@ -1166,6 +1162,34 @@ drink.tabs.user_admin = new (function() {
         $('#user_admin_toggle_admin').click(toggle_admin);
         $('#user_admin_mod_reason').change(modcredits_reason_change);
         $('#user_admin > table').hide();
+
+        $('body').bind('user_changed_event', function(e, data) {
+            if (current_edit_user == null || current_edit_user.username != data.username) return;
+            var changed = false;
+            if ("admin" in data) {
+                current_edit_user.admin = data.admin["new"];
+                changed = true;
+            }
+            if ("add_ibutton" in data) {
+                current_edit_user.ibuttons.push(data.add_ibutton);
+                changed = true;
+            }
+            if ("del_ibutton" in data) {
+                current_edit_user.ibuttons = current_edit_user.ibuttons.filter(function(i) {
+                    return (i != data.del_ibutton);
+                });
+                changed = true;
+            }
+
+            if (changed) got_user_info(current_edit_user);
+        });
+
+        $('body').bind('money_log_event', function(e, data) {
+            if (current_edit_user == null || current_edit_user.username != data.username) return;
+            current_edit_user.credits += data.amount;
+
+            got_user_info(current_edit_user);
+        });
     });
     
     return this;
