@@ -149,11 +149,11 @@ encode_event_data(UserRef, drink, {machine_deleted, Machine}) ->
 encode_event_data(UserRef, drink, {slot_modified, Machine, Slot}) ->
     {struct, [{machineid, atom_to_list(Machine#machine.machine)}, {slot, drink_json_api:slot_stat(Slot)}]};
 encode_event_data(UserRef, drink, T = #temperature{}) ->
-    {struct, [{machine, T#temperature.machine},
+    {struct, [{machine, atom_to_list(T#temperature.machine)},
              %{time, T#temperature.time},
               {temperature, T#temperature.temperature}]};
 encode_event_data(UserRef, drink, D = #drop_log{}) ->
-    {struct, [{machine, D#drop_log.machine},
+    {struct, [{machine, atom_to_list(D#drop_log.machine)},
               {slot, D#drop_log.slot},
              %{time, D#drop_log.time},
              %{status, D#drop_log.status},
