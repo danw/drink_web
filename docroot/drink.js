@@ -578,6 +578,7 @@ drink.tabs.drink_machines = new (function() {
             this.userChanged = function() {
                 var droppable = true;
                 var userinfo = $('body').data('user');
+                if (userinfo == null) return;
                 
                 if(!machine.connected) droppable = false;
                 if(!self.info.available) droppable = false;
