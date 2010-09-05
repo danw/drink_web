@@ -545,11 +545,10 @@ drink.tabs.drink_machines = new (function() {
     var Machine = function(machineList, info) {
         var self = this;
         var visible = false;
-        var slots = []
+        self.slots = []
         var slots_dom = false;
         
-        var Slot = function(info) {
-            var machine = self;
+        var Slot = function(machine, info) {
             var self = this;
            
             var slotDom = $('<tr><td class="slot_num"></td> \
@@ -573,6 +572,7 @@ drink.tabs.drink_machines = new (function() {
                 slotDom.find('.slot_name').text(info.name);
                 slotDom.find('.slot_price').text(info.price);
                 slotDom.find('.slot_available').text(pretty_available(info.available));
+                slotDom.find('.slot_action_disable').text(info.disabled ? "Enable" : "Disable" );
             }
 
             this.userChanged = function() {
@@ -580,18 +580,59 @@ drink.tabs.drink_machines = new (function() {
             }
 
             this.drop = function() {
+                var delay = prompt("Delay? Enter for immediate");
+                if (delay == null)
+                    return; // Cancel
+                if (delay == '')
+                    delay = 0;
+                else
+                    delay = parseInt(delay);
+                if (delay == NaN) {
+                    alert("Invalid Delay");
+                    return;
+                }
+                self.dropNow(delay);
+            }
+
+            this.dropNow = function(delay) {
+                var delay = 0;
+                if(arguments.length == 1) delay = arguments[0];
+
+                drink.remoteCall({
+                    commnad: 'drop',
+                    args: { machine: machine.info.machineid, slot: self.info.num, delay: delay },
+                    success: function() {
+                        alert('Dropping... RUN!');
+                    },
+                    ajaxOptions: {
+                        type: 'POST'
+                    }
+                });
             }
 
             this.edit = function() {
             }
 
             this.disable = function() {
+                self.set_slot_info(self.info.name, self.info.price, self.info.available, !self.info.disabled);
+            }
+
+            this.set_slot_info = function(name, price, available, disabled) {
+                drink.remoteCall({
+                    command: 'setslot',
+                    args: { machine: machine.info.machineid, slot: self.info.num, name: name,
+                            price: price, avail: available, disabled: disabled },
+                    success: function() {},
+                    error: function() {},
+                    ajaxOptions: {
+                        type: 'POST'
+                    }
+                });
             }
 
             this.updateInfo(info);
             slots_dom.append(slotDom);
-            self.dom = slotDom;
-
+            self.dom = slotDom; 
             return this;
         }
         
@@ -685,10 +726,10 @@ drink.tabs.drink_machines = new (function() {
             editDom.find('.machine_edit_admin_only').attr('checked', info.admin_only);
             
             for(var slotnum in info.slots) {
-                if (slotnum in slots) {
-                    slots[slotnum].updateInfo(info.slots[slotnum]);
+                if (slotnum in self.slots) {
+                    self.slots[slotnum].updateInfo(info.slots[slotnum]);
                 } else {
-                    slots[slotnum] = new Slot(info.slots[slotnum]);
+                    self.slots[slotnum] = new Slot(self, info.slots[slotnum]);
                 }
             }
         }
@@ -742,18 +783,6 @@ drink.tabs.drink_machines = new (function() {
         self.user_update();
     }
     
-    var set_slot_info = function(machine, num, name, price, available, disabled) {
-        drink.remoteCall({
-            command: 'setslot',
-            args: { machine: machine, slot: num, name: name, price: price, 
-                available: available, disabled: disabled },
-            success: gotMachines,
-            ajaxOptions: {
-                type: 'POST'
-            }
-        });
-    }
-
     var editSlot = function(machine, slotnum) {
         var slot = machine_info[machine].slots[slotnum];
         var name = prompt("Name", slot.name);
@@ -774,51 +803,6 @@ drink.tabs.drink_machines = new (function() {
         set_slot_info(machine, slotnum, name, price, available, slot.disabled);
     }
     
-    var toggleDisabled = function(machine, slotnum) {
-        var slot = machine_info[machine].slots[slotnum];
-        set_slot_info(machine, slotnum, slot.name, slot.price, slot.available, !slot.disabled);
-    }
-
-    var drop = function(machine, slot) {
-        var delay = 0;
-        if(arguments.length == 3)
-            delay = arguments[2];
-
-        if(delay == null)
-            return;
-
-        if(delay > 0) {
-            setTimeout(function() { drop(machine, slot) }, delay * 1000);
-            return;
-        }
-
-        drink.remoteCall({
-            command: 'drop',
-            args: { machine: machine, slot: slot, delay: 0 },
-            success: function() {
-                alert('Dropping... RUN!');
-            },
-            ajaxOptions: {
-                type: 'POST'
-            }
-        });
-    }
-    
-    var dropDelayAsk = function(machine, slot) {
-        var delay = prompt("Delay? Enter for immediate");
-        if(delay == null)
-            return; // Cancel
-        if(delay == '')
-            delay = 0;
-        else
-            delay = parseInt(delay);
-        if(delay == NaN) {
-            alert("Invalid Delay");
-            return;
-        }
-        drop(machine, slot, delay);
-    }
-
     var addMachine = function() {
         drink.remoteCall({
             command: 'addmachine',
@@ -928,16 +912,20 @@ drink.tabs.drink_machines = new (function() {
             }
         });
 
-        $('body').bind('machine_event', function(e, machine) {
-            if (machine.machineid in machine_list) {
-                machine_list[machine.machineid].updateInfo(machine);
-                drink.log(machine_list[machine.machineid].dom);
-                machine_list[machine.machineid].dom.effect('highlight');
+        $('body').bind('slot_modified_event', function(e, data) {
+            drink.log("Got slot_modified event");
+            drink.log(data);
+            if (data.machineid in machine_list) {
+                if (data.slot.num in machine_list[data.machineid].slots) {
+                    machine_list[data.machineid].slots[data.slot.num].updateInfo(data.slot);
+                } else {
+                    drink.log("Slot modified that we don't know about");
+                }
             } else {
-                machine_list[machine.machineid] = new Machine(machinelist, machine);
+                drink.log("Slot modified on machine that we don't know");
             }
-            self.user_update();
         });
+
     });
     
     this.user_update = function() {
