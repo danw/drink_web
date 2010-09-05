@@ -134,7 +134,7 @@ encode_event(UserRef, drink, Event) ->
 
 encode_event_data(UserRef, drink, MoneyLog = #money_log{}) ->
     {struct, [{username, MoneyLog#money_log.username},
-              {admin, MoneyLog#money_log.admin},
+              {admin, stringify(MoneyLog#money_log.admin)},
               {amount, MoneyLog#money_log.amount},
               {direction, atom_to_list(MoneyLog#money_log.direction)}]};
 encode_event_data(UserRef, drink, {user_changed, Username, Changes}) ->
@@ -174,3 +174,6 @@ encode_user_changes([{admin, Old, New}|T]) ->
     [{admin, {struct, [{old, Old}, {new, New}]}}] ++ encode_user_changes(T);
 encode_user_changes([_|T]) ->
     [] ++ encode_user_changes(T).
+
+stringify(L) when is_list(L) -> L;
+stringify(nil) -> "".

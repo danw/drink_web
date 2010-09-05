@@ -506,42 +506,6 @@ drink.tabs.drink_machines = new (function() {
             return count;
         }
     }
-
-    // var slot_dom = function(machine, slot) {
-    //     var droppable = false;
-    //     droppable = (slot.available && machine.connected && ($('body').data('user').credits >= slot.price));
-    // 
-    //     var s = $('<tr><td class="slotnum"></td><td class="slotname"></td><td class="slotprice"></td><td class="slotavail"></td><td class="slotactions"></td></tr>');
-    //     
-    //     if(slot.disabled)
-    //         s.addClass('disabled');
-    //     s.data('machine', machine.machineid);
-    //     s.data('slotnum', slot.num);
-    //     
-    //     s.find('.slotnum').text(slot.num);
-    //     s.find('.slotname').text(slot.name);
-    //     s.find('.slotprice').text(slot.price);
-    //     s.find('.slotavail').text(pretty_available(slot.available));
-    //     var actions = s.find('.slotactions');
-    //     
-    //     $('<a class="slotaction_drop"> Drop </a>').appendTo(actions).click(function() {
-    //         slot = $(this).parents('tr').eq(0);
-    //         dropDelayAsk(slot.data('machine'), slot.data('slotnum'));
-    //         return false;
-    //     });
-    //     $('<a class="slotaction_edit"> Edit </a>').appendTo(actions).click(function() {
-    //         slot = $(this).parents('tr').eq(0);
-    //         editSlot(slot.data('machine'), slot.data('slotnum'));
-    //         return false;
-    //     });
-    //     $('<a class="slotaction_disable"></a>').text(slot.disabled ? ' Enable ' : ' Disable ').appendTo(actions).click(function() {
-    //         slot = $(this).parents('tr').eq(0);
-    //         toggleDisabled(slot.data('machine'), slot.data('slotnum'));
-    //         return false;
-    //     });
-    //     
-    //     return s;
-    // }
     
     var Machine = function(machineList, info) {
         var self = this;
@@ -614,7 +578,7 @@ drink.tabs.drink_machines = new (function() {
                 if(arguments.length == 1) delay = arguments[0];
 
                 drink.remoteCall({
-                    commnad: 'drop',
+                    command: 'drop',
                     args: { machine: machine.info.machineid, slot: self.info.num, delay: delay },
                     success: function() {
                         alert('Dropping... RUN!');
