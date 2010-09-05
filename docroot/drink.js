@@ -124,6 +124,12 @@ drink.websocket = new (function() {
 })();
 
 drink.remoteCall = function(options) {
+    if (!("command" in options)) {
+        drink.log("remoteCall without command: ");
+        drink.log(options);
+        return;
+    }
+
     if(drink.websocket.use) {
         drink.log("RC Using Websocket");
         drink.websocket.remoteCall(options);
