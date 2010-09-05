@@ -573,10 +573,23 @@ drink.tabs.drink_machines = new (function() {
                 slotDom.find('.slot_price').text(info.price);
                 slotDom.find('.slot_available').text(pretty_available(info.available));
                 slotDom.find('.slot_action_disable').text(info.disabled ? "Enable" : "Disable" );
+
+                self.userChanged();
             }
 
             this.userChanged = function() {
-                //TODO droppable
+                var droppable = true;
+                var userinfo = $('body').data('user');
+                
+                if(!machine.connected) droppable = false;
+                if(!self.info.available) droppable = false;
+                if(self.info.disabled) droppable = false;
+                if(userinfo.credits < self.info.price) droppable = false;
+                
+                if(droppable)
+                    slotDom.find('.slot_action_drop').show();
+                else
+                    slotDom.find('.slot_action_drop').hide();
             }
 
             this.drop = function() {
@@ -611,6 +624,22 @@ drink.tabs.drink_machines = new (function() {
             }
 
             this.edit = function() {
+                var name = prompt("Name", self.info.name);
+                if(name == null || name == '')
+                    return;
+                var price = prompt("Price", self.info.price);
+                if(price == null || price == '')
+                    return;
+                var price = new Number(price);
+                if(price == NaN || price < 0)
+                    return;
+                var available = prompt("Available", self.info.available);
+                if(available == null || available == '')
+                    return;
+                var available = new Number(available);
+                if(available == NaN || available < 0)
+                    return;
+                self.set_slot_info(name, price, available, self.info.disabled);
             }
 
             this.disable = function() {
@@ -782,27 +811,7 @@ drink.tabs.drink_machines = new (function() {
         
         self.user_update();
     }
-    
-    var editSlot = function(machine, slotnum) {
-        var slot = machine_info[machine].slots[slotnum];
-        var name = prompt("Name", slot.name);
-        if(name == null || name == '')
-            return;
-        var price = prompt("Price", slot.price);
-        if(price == null || price == '')
-            return;
-        var price = new Number(price);
-        if(price == NaN || price < 0)
-            return;
-        var available = prompt("Available", slot.available);
-        if(available == null || available == '')
-            return;
-        var available = new Number(available);
-        if(available == NaN || available < 0)
-            return;
-        set_slot_info(machine, slotnum, name, price, available, slot.disabled);
-    }
-    
+       
     var addMachine = function() {
         drink.remoteCall({
             command: 'addmachine',
@@ -929,30 +938,17 @@ drink.tabs.drink_machines = new (function() {
     });
     
     this.user_update = function() {
-        var drops = $('#drink_machines .slot_action_drop');
         var admin = $('#drink_machines .slot_action_edit, #drink_machines .slot_action_disable, #drink_machines .machine_edit, #drink_machines .machine_remove, #machine_add_link');
         
         var userinfo = $('body').data('user');
-        if(userinfo == undefined) return;
-        
-        // todo - droppable
-        /*drops.each(function() {
-            var row = $(this).parents('tr').eq(0);
-            var machine = machine_info[$(row).data("machine")];
-            var slot = machine.slots[$(row).data("slotnum")];
-                
-            var droppable = true;
-            if(!machine.connected) droppable = false;
-            if(!slot.available) droppable = false;
-            if(slot.disabled) droppable = false;
-            if(userinfo.credits < slot.price) droppable = false;
-                
-            if(droppable)
-                $(this).show();
-            else
-                $(this).hide();
-        });*/
-        
+        if (userinfo == null) return;
+
+        for (machineid in machine_list) {
+            for (slot in machine_list[machineid].slots) {
+                machine_list[machineid].slots[slot].userChanged(userinfo);
+            }
+        }
+
         if(userinfo.admin) {
             admin.show();
         } else
