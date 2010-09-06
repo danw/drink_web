@@ -142,12 +142,13 @@ encode_event_data(UserRef, drink, MoneyLog = #money_log{}) ->
 encode_event_data(UserRef, drink, {user_changed, Username, Changes}) ->
     {struct, [{username, Username}] ++ encode_user_changes(Changes)};
 encode_event_data(UserRef, drink, {machine_added, Machine}) ->
-    drink_json_api:machine_stat(user_auth:can_admin(UserRef), Machine);
-encode_event_data(UserRef, drink, {machine_modified, Machine}) ->
+    % TODO: we already have the full machine object, no need to get the info again
+    drink_json_api:machine_stat(user_auth:can_admin(UserRef), Machine#machine.machine);
+encode_event_data(UserRef, drink, {machine_modified, OldMachine, Machine}) ->
     % TODO: we already have the full machine object, no need to get the info again
     drink_json_api:machine_stat(user_auth:can_admin(UserRef), Machine#machine.machine);
 encode_event_data(UserRef, drink, {machine_deleted, Machine}) ->
-    {struct, [{machineid, atom_to_list(Machine)}]};
+    {struct, [{machineid, atom_to_list(Machine#machine.machine)}]};
 encode_event_data(UserRef, drink, {machine_connected, Machine}) ->
     {struct, [{machineid, atom_to_list(Machine)}]};
 encode_event_data(UserRef, drink, {machine_disconnected, Machine}) ->
