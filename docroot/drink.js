@@ -193,6 +193,8 @@ drink.time = {
     },
     
     prettyDateTime: function(t) {
+        return t;
+        //TODO: re-enable
         var timeStr = t.toDateString();
         
         if(timeStr == drink.time.today()) {
