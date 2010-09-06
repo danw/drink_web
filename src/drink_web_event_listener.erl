@@ -27,6 +27,7 @@
 -behaviour (gen_server).
 
 -include_lib ("drink/include/drink_mnesia.hrl").
+-include_lib ("drink/include/user.hrl").
 -include_lib ("drink_log/include/drink_log.hrl").
 
 -export ([start_link/1]).
@@ -55,13 +56,16 @@ handle_cast({send_msg, Msg}, State = #worker{socket = Socket}) when Socket =/= n
 handle_cast(_, State) ->
     {noreply, State}.
 
-handle_info({dw_event, drink, _FromPid, Event}, State) ->
-    Msg = encode_event(State#worker.userref, drink, Event),
+handle_info({dw_event, Provider, _FromPid, Event}, State) ->
+    Msg = encode_event(State#worker.userref, Provider, Event),
     yaws_api:websocket_send(State#worker.socket, Msg),
     {noreply, State};
 handle_info({ok, WebSocket}, State) ->
     % TODO: Check for already existing socket?
+    {ok, UserInfo} = user_auth:user_info(State#worker.userref),
+    drink_connections:register(UserInfo#user.username, websocket, nil),
     dw_events:register_pid(drink, State#worker.userref),
+    dw_events:register_pid(drink_connections, State#worker.userref),
     yaws_api:websocket_send(WebSocket, json:encode({struct, [{event, "hello"}]})),
     {noreply, State#worker{socket = WebSocket}};
 handle_info({tcp, _WebSocket, DataFrame}, State) ->
@@ -123,8 +127,8 @@ handle_incoming_call(State, Data) ->
             error_logger:error_msg("Unknown message(Error ~p): ~p~n", [E, Data])
     end.
 
-encode_event(UserRef, drink, Event) ->
-    case encode_event_data(UserRef, drink, Event) of
+encode_event(UserRef, Provider, Event) ->
+    case encode_event_data(UserRef, Provider, Event) of
         false ->
             json:encode({struct, [{event, atom_to_list(element(1, Event))}]});
         Data ->
@@ -170,7 +174,15 @@ encode_event_data(UserRef, drink, D = #drop_log{}) ->
               {status, atom_to_list(D#drop_log.status)},
               {username, D#drop_log.username}]};
 encode_event_data(UserRef, drink, _) ->
-    false.
+    false;
+encode_event_data(_UserRef, drink_connections, {connected, Pid, Username, Transport, App}) ->
+    {struct, [{pid, pid_to_list(Pid)},
+              {username, Username},
+              {transport, atom_to_list(Transport)},
+              {app, atom_to_list(App)}]};
+encode_event_data(_UserRef, drink_connections, {disconnected, Pid}) ->
+    {struct, [{pid, pid_to_list(Pid)}]};
+encode_event_data(_, _, _) -> false.
 
 encode_user_changes([]) -> [];
 encode_user_changes([{add_ibutton, IButton}|T]) ->
