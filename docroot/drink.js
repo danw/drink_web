@@ -326,19 +326,24 @@ drink.tabs.temperatures = new (function() {
     var MaxBreak = 120; // Break the graph if there is more than 2 minutes between data points
     var plot = null;
     var plot_data = null;
+    var temp_data = null;
+    var maximum_time = null;
         
     var gotTemps = function(data) {
         last_update = drink.time.nowUTC();
         plot_data = [];
-        
+       
+        temp_data = data;
+        maximum_time = data.start + data.length;
+
         /* Convert to local time */
-        data.start = data.start - drink.time.tz_offset;
-        data.length = data.length - drink.time.tz_offset;
+        var local_start = data.start - drink.time.tz_offset;
+        var local_length = data.length - drink.time.tz_offset;
         for(var m in data.machines)
             for(var i in data.machines[m])
                 data.machines[m][i][0] = data.machines[m][i][0] - drink.time.tz_offset;
         
-        var max_time = data.start + data.length - 60;
+        var max_time = local_start + local_length - 60;
 
         for(var m in data.machines) {
             if(data.machines[m].length == 0)
@@ -368,9 +373,13 @@ drink.tabs.temperatures = new (function() {
 
             plot_data.push(temps);
         }
+
+        for (var m in data.machines)
+            for (var i in data.machines[m])
+                data.machines[m][i][0] = data.machines[m][i][0] + drink.time.tz_offset;
         
         plot = $.plot($('#temperature_plot'), plot_data,
-            {xaxis: {mode: "time", min: data.start * 1000, max: max_time * 1000}});
+            {xaxis: {mode: "time", min: local_start * 1000, max: max_time * 1000}});
     }
     
     var getTemps = function(From, Length) {
@@ -391,7 +400,17 @@ drink.tabs.temperatures = new (function() {
     this.refresh = function() {
         getTemps(drink.time.nowUTC() - Length, Length + 60);
     }
-    
+   
+    $(document).ready(function() {
+        $('body').bind('temperature_event', function(e, data) {
+            if (maximum_time == null) return;
+            maximum_time = (maximum_time > data.time) ? maximum_time : data.time;
+            temp_data.start = maximum_time - Length;
+            temp_data.machines[data.machine][temp_data.machines[data.machine].length] = [data.time, data.temperature];
+            gotTemps(temp_data);
+        });
+    });
+
     return this;
 })();
 
