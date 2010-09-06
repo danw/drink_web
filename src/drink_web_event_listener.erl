@@ -133,10 +133,12 @@ encode_event(UserRef, drink, Event) ->
     end.
 
 encode_event_data(UserRef, drink, MoneyLog = #money_log{}) ->
-    {struct, [{username, MoneyLog#money_log.username},
+    {struct, [{time, drink_json_api:format_time(MoneyLog#money_log.time)},
+              {username, MoneyLog#money_log.username},
               {admin, stringify(MoneyLog#money_log.admin)},
               {amount, MoneyLog#money_log.amount},
-              {direction, atom_to_list(MoneyLog#money_log.direction)}]};
+              {direction, atom_to_list(MoneyLog#money_log.direction)},
+              {reason, atom_to_list(MoneyLog#money_log.reason)}]};
 encode_event_data(UserRef, drink, {user_changed, Username, Changes}) ->
     {struct, [{username, Username}] ++ encode_user_changes(Changes)};
 encode_event_data(UserRef, drink, {machine_added, Machine}) ->
@@ -158,13 +160,13 @@ encode_event_data(UserRef, drink, {slot_deleted, Machine, Slot}) ->
     {struct, [{machineid, atom_to_list(Machine#machine.machine)}, {slot, Slot}]};
 encode_event_data(UserRef, drink, T = #temperature{}) ->
     {struct, [{machine, atom_to_list(T#temperature.machine)},
-             %{time, T#temperature.time},
+              {time, drink_json_api:format_time(T#temperature.time)},
               {temperature, T#temperature.temperature}]};
 encode_event_data(UserRef, drink, D = #drop_log{}) ->
     {struct, [{machine, atom_to_list(D#drop_log.machine)},
               {slot, D#drop_log.slot},
-             %{time, D#drop_log.time},
-             %{status, D#drop_log.status},
+              {time, drink_json_api:format_time(D#drop_log.time)},
+              {status, atom_to_list(D#drop_log.status)},
               {username, D#drop_log.username}]};
 encode_event_data(UserRef, drink, _) ->
     false.
