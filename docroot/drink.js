@@ -1235,6 +1235,82 @@ drink.tabs.user_admin = new (function() {
     return this;
 })();
 
+drink.tabs.connections = new (function() {
+    var self = this;
+    var listDom = undefined;
+    var connections = {};
+    var have_list = false;
+
+    var Connection = function(data) {
+        var self = this;
+        var dom = undefined;
+        var connection_data = undefined;
+
+        this.updateInfo = function(data) {
+            if (dom == undefined) return;
+            dom.find('.connection_pid').text(data.pid);
+            dom.find('.connection_user').text(data.username);
+            dom.find('.connection_transport').text(data.transport);
+            dom.find('.connection_app').text(data.app);
+
+            connection_data = data;
+        }
+
+        this.disconnected = function() {
+            self.remove();
+        }
+
+        this.remove = function() {
+            if (dom == undefined) return;
+            dom.remove();
+        }
+
+        dom = $('<tr><td class="connection_pid"></td><td class="connection_user"></td> \
+                 <td class="connection_transport"></td><td class="connection_app"></td></tr>');
+        this.updateInfo(data);
+        listDom.append(dom);
+
+        return this;
+    };
+
+    this.admin_required = false;
+
+    this.user_update = function() {
+    }
+
+    this.show_tab = function() {
+        if (have_list) return;
+        have_list = true;
+        drink.remoteCall({
+            command: 'getconnections',
+            args: {},
+            success: function(data) {
+                for(pid in connections)
+                    connections[pid].remove();
+                for(pid in data) {
+                    connections[pid] = new Connection(data[pid]);
+                }
+            },
+            ajaxOptions: { type: 'GET' }
+        });
+    }
+
+    $(document).ready(function() {
+        listDom = $('#connection_list');
+
+        $('body').bind('connected_event', function(e, data) {
+            if (data.pid in connections) return;
+            connections[data.pid] = new Connection(data);
+        });
+
+        $('body').bind('disconnected_event', function(e, data) {
+            if (!(data.pid in connections)) return;
+            connections[data.pid].disconnected();
+            delete(connections[data.pid]);
+        });
+    });
+})();
+
 $(document).ready(function() {
     $('body').trigger('user_refresh');
 });
