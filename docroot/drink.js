@@ -403,6 +403,8 @@ drink.tabs.logs = new (function () {
     
     var offset = 0;
     var limit = 20;
+
+    var logElem = undefined;
     
     var gotLogs = function(data) {
         last_update = drink.time.nowUTC();
@@ -419,35 +421,40 @@ drink.tabs.logs = new (function () {
         else
             $('.lognext').hide();
 
-        var logElem = $('#logcontainer').empty();
+        logElem = $('#logcontainer').empty();
         var lines = [];
 
         for(var i = 0; i < data.lines.length; i++) {
             var l = data.lines[i];
-            
-            var time = drink.time.fromUTC(l.time);
-            var d = drink.time.prettyDateTime(time);
-            
-            if(l.type == 'drop') {
-                var error = l.status.search(/error/i) != -1;
-                lines[lines.length] = [
-                    '<tr', (error) ? ' class="error"' : '', '><td class="type">Drop</td><td class="time">', d,
-                    '</td><td class="username">', l.username, 
-                    '</td><td class="info">Dropped ', l.slot, ' from ', l.machine, '</td><td class="status">', l.status, '</td></tr>'
-                ].join('');
-            } else {
-                var error = l.reason.search(/error/i) != -1;
-                lines[lines.length] = [
-                    '<tr', (error) ? ' class="error"' : '', '><td class="type">Money</td><td class="time">', d,
-                    '</td><td class="username">', l.username,
-                    '</td><td class="info">Admin: ', l.admin, ' Amount: ', l.amount, ' Direction: ', l.direction,
-                    '</td><td class="reason">', l.reason, '</td></tr>'
-                ].join('');
-            }
+
+            lines[lines.length] = self.formatLog(l.type, l);
         }
         logElem.append(lines.join(''));
     }
-    
+
+    this.formatLog = function(type, data) {
+        var time = drink.time.fromUTC(data.time);
+        var d = drink.time.prettyDateTime(time);
+
+        if (type == 'drop') {
+            var error = data.status.search(/error/i) != -1;
+            return [
+                    '<tr', (error) ? ' class="error"' : '', '><td class="type">Drop</td><td class="time">', d,
+                    '</td><td class="username">', data.username, 
+                    '</td><td class="info">Dropped ', data.slot, ' from ', data.machine, '</td><td class="status">', data.status, '</td></tr>'
+                ].join('');
+        } else if(type == 'money') {
+            var error = data.reason.search(/error/i) != -1;
+            return [
+                    '<tr', (error) ? ' class="error"' : '', '><td class="type">Money</td><td class="time">', d,
+                    '</td><td class="username">', data.username,
+                    '</td><td class="info">Admin: ', data.admin, ' Amount: ', data.amount, ' Direction: ', data.direction,
+                    '</td><td class="reason">', data.reason, '</td></tr>'
+                ].join('');
+
+        }
+    }
+
     this.admin_required = false;
     
     this.show_tab = function() {
@@ -464,11 +471,23 @@ drink.tabs.logs = new (function () {
     }
     
     $(document).ready(function() {
+        logElem = $('#logcontainer');
+
         $('body').bind('user_changed', function(e, user) {
             last_update = false;
             // TODO fix
             if(drink.tabs.selectedTab == 'logs')
                 self.refresh();
+        });
+
+        $('body').bind('money_log_event', function(e, data) {
+            if (logElem == undefined) return;
+            logElem.prepend(self.formatLog('money', data));
+        });
+
+        $('body').bind('drop_log_event', function(e, data) {
+            if (logElem == undefined) return;
+            logElem.prepend(self.formatLog('drop', data));
         });
 
         $('.logprev').click(function() {
