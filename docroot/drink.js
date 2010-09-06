@@ -482,11 +482,13 @@ drink.tabs.logs = new (function () {
 
         $('body').bind('money_log_event', function(e, data) {
             if (logElem == undefined) return;
+            if (offset != 0) return;
             logElem.prepend(self.formatLog('money', data));
         });
 
         $('body').bind('drop_log_event', function(e, data) {
             if (logElem == undefined) return;
+            if (offset != 0) return;
             logElem.prepend(self.formatLog('drop', data));
         });
 
