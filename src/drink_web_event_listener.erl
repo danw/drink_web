@@ -26,10 +26,7 @@
 -module (drink_web_event_listener).
 -behaviour (gen_server).
 
--include_lib ("drink/include/drink_mnesia.hrl").
 -include_lib ("drink/include/user.hrl").
--include_lib ("drink_log/include/drink_log.hrl").
--include_lib ("drink_app_auth/include/app_auth.hrl").
 
 -export ([start_link/1]).
 -export ([init/1]).
@@ -58,7 +55,7 @@ handle_cast(_, State) ->
     {noreply, State}.
 
 handle_info({dw_event, Provider, _FromPid, Event}, State) ->
-    Msg = encode_event(State#worker.userref, Provider, Event),
+    Msg = drink_json_api:encode_event(State#worker.userref, Provider, Event),
     yaws_api:websocket_send(State#worker.socket, Msg),
     {noreply, State};
 handle_info({ok, WebSocket}, State) ->
@@ -86,6 +83,8 @@ handle_info(_, State) ->
 
 terminate(_Reason, State) ->
     dw_events:unregister_pid(drink),
+    dw_events:unregister_pid(drink_connections),
+    dw_events:unregister_pid(drink_app_auth),
     user_auth:delete_ref(State#worker.userref),
     ok.
 
@@ -129,79 +128,4 @@ handle_incoming_call(State, Data) ->
             error_logger:error_msg("Unknown message(Error ~p): ~p~n", [E, Data])
     end.
 
-encode_event(UserRef, Provider, Event) ->
-    case encode_event_data(UserRef, Provider, Event) of
-        false ->
-            json:encode({struct, [{event, atom_to_list(element(1, Event))}]});
-        Data ->
-            json:encode({struct, [{event, atom_to_list(element(1, Event))},
-                                  {data, Data}]})
-    end.
 
-encode_event_data(UserRef, drink, MoneyLog = #money_log{}) ->
-    {struct, [{time, drink_json_api:format_time(MoneyLog#money_log.time)},
-              {username, MoneyLog#money_log.username},
-              {admin, stringify(MoneyLog#money_log.admin)},
-              {amount, MoneyLog#money_log.amount},
-              {direction, atom_to_list(MoneyLog#money_log.direction)},
-              {reason, atom_to_list(MoneyLog#money_log.reason)}]};
-encode_event_data(UserRef, drink, {user_changed, Username, Changes}) ->
-    {struct, [{username, Username}] ++ encode_user_changes(Changes)};
-encode_event_data(UserRef, drink, {machine_added, Machine}) ->
-    % TODO: we already have the full machine object, no need to get the info again
-    drink_json_api:machine_stat(user_auth:can_admin(UserRef), Machine#machine.machine);
-encode_event_data(UserRef, drink, {machine_modified, OldMachine, Machine}) ->
-    % TODO: we already have the full machine object, no need to get the info again
-    drink_json_api:machine_stat(user_auth:can_admin(UserRef), Machine#machine.machine);
-encode_event_data(UserRef, drink, {machine_deleted, Machine}) ->
-    {struct, [{machineid, atom_to_list(Machine#machine.machine)}]};
-encode_event_data(UserRef, drink, {machine_connected, Machine}) ->
-    {struct, [{machineid, atom_to_list(Machine)}]};
-encode_event_data(UserRef, drink, {machine_disconnected, Machine}) ->
-    {struct, [{machineid, atom_to_list(Machine)}]};
-encode_event_data(UserRef, drink, {slot_added, Machine, Slot}) ->
-    {struct, [{machineid, atom_to_list(Machine#machine.machine)}, {slot, drink_json_api:slot_stat(Slot)}]};
-encode_event_data(UserRef, drink, {slot_modified, Machine, Slot}) ->
-    {struct, [{machineid, atom_to_list(Machine#machine.machine)}, {slot, drink_json_api:slot_stat(Slot)}]};
-encode_event_data(UserRef, drink, {slot_deleted, Machine, Slot}) ->
-    {struct, [{machineid, atom_to_list(Machine#machine.machine)}, {slot, Slot}]};
-encode_event_data(UserRef, drink, T = #temperature{}) ->
-    {struct, [{machine, atom_to_list(T#temperature.machine)},
-              {time, drink_json_api:format_time(T#temperature.time)},
-              {temperature, T#temperature.temperature}]};
-encode_event_data(UserRef, drink, D = #drop_log{}) ->
-    {struct, [{machine, atom_to_list(D#drop_log.machine)},
-              {slot, D#drop_log.slot},
-              {time, drink_json_api:format_time(D#drop_log.time)},
-              {status, atom_to_list(D#drop_log.status)},
-              {username, D#drop_log.username}]};
-encode_event_data(_, drink, _) ->
-    false;
-encode_event_data(_UserRef, drink_connections, {connected, Pid, Username, Transport, App}) ->
-    {struct, [{pid, pid_to_list(Pid)},
-              {username, Username},
-              {transport, atom_to_list(Transport)},
-              {app, atom_to_list(App)}]};
-encode_event_data(_UserRef, drink_connections, {disconnected, Pid}) ->
-    {struct, [{pid, pid_to_list(Pid)}]};
-encode_event_data(_, drink_connections, _) -> false;
-encode_event_data(_, drink_app_auth, {app_new, App}) ->
-    {struct, [{name, atom_to_list(App#app.name)},
-              {owner, App#app.owner},
-              {description, App#app.description}]};
-encode_event_data(_, drink_app_auth, {app_deleted, Name}) ->
-    {struct, [{name, atom_to_list(Name)}]};
-encode_event_data(_, _, _) -> false.
-
-encode_user_changes([]) -> [];
-encode_user_changes([{add_ibutton, IButton}|T]) ->
-    [{add_ibutton, IButton}] ++ encode_user_changes(T);
-encode_user_changes([{del_ibutton, IButton}|T]) ->
-    [{del_ibutton, IButton}] ++ encode_user_changes(T);
-encode_user_changes([{admin, Old, New}|T]) ->
-    [{admin, {struct, [{old, Old}, {new, New}]}}] ++ encode_user_changes(T);
-encode_user_changes([_|T]) ->
-    [] ++ encode_user_changes(T).
-
-stringify(L) when is_list(L) -> L;
-stringify(nil) -> "".
