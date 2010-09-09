@@ -29,6 +29,7 @@
 -include_lib ("drink/include/drink_mnesia.hrl").
 -include_lib ("drink/include/user.hrl").
 -include_lib ("drink_log/include/drink_log.hrl").
+-include_lib ("drink_app_auth/include/app_auth.hrl").
 
 -export ([start_link/1]).
 -export ([init/1]).
@@ -66,6 +67,7 @@ handle_info({ok, WebSocket}, State) ->
     drink_connections:register(UserInfo#user.username, websocket, nil),
     dw_events:register_pid(drink, State#worker.userref),
     dw_events:register_pid(drink_connections, State#worker.userref),
+    dw_events:register_pid(drink_app_auth, State#worker.userref),
     yaws_api:websocket_send(WebSocket, json:encode({struct, [{event, "hello"}]})),
     {noreply, State#worker{socket = WebSocket}};
 handle_info({tcp, _WebSocket, DataFrame}, State) ->
@@ -173,7 +175,7 @@ encode_event_data(UserRef, drink, D = #drop_log{}) ->
               {time, drink_json_api:format_time(D#drop_log.time)},
               {status, atom_to_list(D#drop_log.status)},
               {username, D#drop_log.username}]};
-encode_event_data(UserRef, drink, _) ->
+encode_event_data(_, drink, _) ->
     false;
 encode_event_data(_UserRef, drink_connections, {connected, Pid, Username, Transport, App}) ->
     {struct, [{pid, pid_to_list(Pid)},
@@ -182,6 +184,13 @@ encode_event_data(_UserRef, drink_connections, {connected, Pid, Username, Transp
               {app, atom_to_list(App)}]};
 encode_event_data(_UserRef, drink_connections, {disconnected, Pid}) ->
     {struct, [{pid, pid_to_list(Pid)}]};
+encode_event_data(_, drink_connections, _) -> false;
+encode_event_data(_, drink_app_auth, {app_new, App}) ->
+    {struct, [{name, atom_to_list(App#app.name)},
+              {owner, App#app.owner},
+              {description, App#app.description}]};
+encode_event_data(_, drink_app_auth, {app_deleted, Name}) ->
+    {struct, [{name, atom_to_list(Name)}]};
 encode_event_data(_, _, _) -> false.
 
 encode_user_changes([]) -> [];

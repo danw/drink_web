@@ -1324,13 +1324,18 @@ drink.tabs.apps = new (function() {
             return false;
         });
 
-        $('body').bind('app_added', function(e, data) {
+        $('body').bind('app_new_event', function(e, data) {
+            if (data.name in allApps) return;
+            allApps[data.name] = new App(data);
         });
 
-        $('body').bind('app_modified', function(e, data) {
+        $('body').bind('app_modified_event', function(e, data) {
         });
 
-        $('body').bind('app_deleted', function(e, data) {
+        $('body').bind('app_deleted_event', function(e, data) {
+            if (!(data.name in allApps)) return;
+            allApps[data.name].remove();
+            delete(allApps[data.name]);
         });
     });
 });
