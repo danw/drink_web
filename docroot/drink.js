@@ -1255,17 +1255,32 @@ drink.tabs.apps = new (function() {
             app_data = data;
         }
 
+        this.delete_app = function() {
+            drink.remoteCall({
+                command: 'delapp',
+                args: { name: app_data.name },
+                success: function() {},
+                error: function() {},
+                ajaxOptions: { type: 'POST' }
+            });
+        }
+
         this.remove = function() {
             if (dom == undefined) return;
             dom.remove();
         }
 
-        dom = $('<tr><td class="app_name"></td><td class="app_owner"></td><td class="app_description"></td></tr>');
+        dom = $('<tr><td class="app_name"></td><td class="app_owner"></td><td class="app_description"></td> \
+                     <td class="app_actions"> \
+                        <a href="#" class="app_action_delete">Delete</a> \
+                     </td></tr>');
+        dom.find('.app_action_delete').click(function() { self.delete_app(); return false; });
         this.updateInfo(data);
         allListDom.append(dom);
         return this;
     }
 
+    
     this.admin_required = false;
 
     this.user_update = function() {
@@ -1281,7 +1296,7 @@ drink.tabs.apps = new (function() {
                 for (app in allApps)
                     allApps[app].remove();
                 for (app in data)
-                    allApps[app] = new Connection(data[app]);
+                    allApps[app] = new App(data[app]);
             },
             ajaxOptions: { type: 'GET' }
         });
@@ -1289,6 +1304,25 @@ drink.tabs.apps = new (function() {
 
     $(document).ready(function() {
         allListDom = $('#apps_list');
+
+        $('#app_add').click(function() {
+            var name = prompt("Name");
+            if (name == null || name == '')
+                return false;
+            var description = prompt("Description");
+            if (description == null || description == '')
+                return false;
+          
+            drink.remoteCall({
+                command: 'addapp',
+                args: { name: name, description: description },
+                success: function() {},
+                error: function() {},
+                ajaxOptions: { type: 'POST' }
+            });
+          
+            return false;
+        });
 
         $('body').bind('app_added', function(e, data) {
         });

@@ -233,9 +233,26 @@ request(A, U, 'GET', getconnections) ->
     api(U, getconnections, []);
 request(_, _, _, getconnections) -> error(wrong_method);
 
+request(A, U, 'POST', addapp) ->
+    case {yaws_api:queryvar(A, "name"),
+          yaws_api:queryvar(A, "description")} of
+        {{ok, Name}, {ok, Description}} ->
+            api(U, addapp, [{name, Name}, {description, Description}]);
+        _ -> error(invalid_args)
+    end;
+request(_, _, _, addapp) -> error(wrong_method);
+
 request(A, U, 'GET', getapps) ->
     api(U, getapps, []);
 request(_, _, _, getapps) -> error(wrong_method);
+
+request(A, U, 'POST', delapp) ->
+    case yaws_api:queryvar(A, "name") of
+        {ok, Name} ->
+            api(U, delapp, [{name, Name}]);
+        _ -> error(invalid_args)
+    end;
+request(_, _, _, delapp) -> error(wrong_method);
 
 request(_, _, 'GET', _) ->
     error(unknown_path);
