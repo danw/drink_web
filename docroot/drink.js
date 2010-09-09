@@ -1235,6 +1235,72 @@ drink.tabs.user_admin = new (function() {
     return this;
 })();
 
+drink.tabs.apps = new (function() {
+    var self = this;
+    var allListDom = undefined;
+    var allApps = {};
+    var have_all_apps = false;
+    
+    var App = function(data) {
+        var self = this;
+        var dom = undefined;
+        var app_data = undefined;
+
+        this.updateInfo = function(data) {
+            if (dom == undefined) return;
+            dom.find('.app_name').text(data.name);
+            dom.find('.app_owner').text(data.owner);
+            dom.find('.app_description').text(data.description);
+
+            app_data = data;
+        }
+
+        this.remove = function() {
+            if (dom == undefined) return;
+            dom.remove();
+        }
+
+        dom = $('<tr><td class="app_name"></td><td class="app_owner"></td><td class="app_description"></td></tr>');
+        this.updateInfo(data);
+        allListDom.append(dom);
+        return this;
+    }
+
+    this.admin_required = false;
+
+    this.user_update = function() {
+    }
+
+    this.show_tab = function() {
+        if (have_all_apps) return;
+        have_all_apps = true;
+        drink.remoteCall({
+            command: 'getapps',
+            args: {},
+            success: function(data) {
+                for (app in allApps)
+                    allApps[app].remove();
+                for (app in data)
+                    allApps[app] = new Connection(data[app]);
+            },
+            ajaxOptions: { type: 'GET' }
+        });
+    }
+
+    $(document).ready(function() {
+        allListDom = $('#apps_list');
+
+        $('body').bind('app_added', function(e, data) {
+        });
+
+        $('body').bind('app_modified', function(e, data) {
+        });
+
+        $('body').bind('app_deleted', function(e, data) {
+        });
+    });
+});
+
 drink.tabs.connections = new (function() {
     var self = this;
     var listDom = undefined;

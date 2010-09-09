@@ -229,6 +229,14 @@ request(A, U, 'POST', delmachine) ->
     end;
 request(_, _, _, delmachine) -> error(wrong_method);
 
+request(A, U, 'GET', getconnections) ->
+    api(U, getconnections, []);
+request(_, _, _, getconnections) -> error(wrong_method);
+
+request(A, U, 'GET', getapps) ->
+    api(U, getapps, []);
+request(_, _, _, getapps) -> error(wrong_method);
+
 request(_, _, 'GET', _) ->
     error(unknown_path);
 request(_, _, 'POST', _) ->
