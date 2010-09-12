@@ -8,7 +8,7 @@
              drink_web_event_worker,
              drink_web_event_listener]},
   {registered,[]},
-  {applications, [kernel, stdlib, sasl, ssl, yaws]},
+  {applications, [kernel, stdlib, sasl, ssl, yaws, drink]},
   {mod, {drink_web_app, []}},
   {start_phases, []}
 ]}.
