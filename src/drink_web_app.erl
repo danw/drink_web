@@ -51,7 +51,7 @@ yaws_conf() ->
     },
     SSLKey = filename:join("etc", "key.pem"),
     SSLCert = filename:join("etc", "cert.pem"),
-    SSLCA = filename:join("etc", "cshca.crt"),
+    SSLCA = filename:join("etc", "ca.crt"),
     case {filelib:is_file(SSLKey), filelib:is_file(SSLCert), filelib:is_file(SSLCA)} of
         {true, true, true} ->
             SC = #sconf{
@@ -73,11 +73,11 @@ yaws_conf() ->
                 allowed_scripts = [yaws],
                 ssl = Ssl,
                 appmods = [{"/drink", drink_web}],
-                authdirs = [{"/", #auth{dir = "/", mod = authmod_webauth}}],
+                authdirs = [{"/", #auth{dir = ["/"], mod = authmod_webauth}}],
                 start_mod = authmod_webauth,
                 opaque = [
-                    {webauth_keytab, "FILE:" ++ filename:join(code:priv_dir(drink), "webauth.keytab")},
-                    {webauth_sslca, filename:join(code:priv_dir(drink), "cshca.crt")},
+                    {webauth_keytab, "FILE:" ++ filename:join("etc", "webauth.keytab")},
+                    {webauth_sslca, filename:join("etc", "ca.crt")},
                     {webauth_login_url, "https://webauth.csh.rit.edu/login/"},
                     {webauth_kdc_url, "https://webauth.csh.rit.edu/webkdc-service/"},
                     {webauth_kdc_princ, "service/webkdc@CSH.RIT.EDU"}
