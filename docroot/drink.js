@@ -100,9 +100,14 @@ drink.websocket = new (function() {
             drink.log("Upgrade to Chrome or another browser that support websockets!");
             return;
         }
-        
-        // TODO: dynamic websocket address
-        self.ws = new WebSocket("ws://mini.danw.org:42080/drink/events");
+
+		var ws_url = "ws://";
+		if (window.location.protocol == "https:")
+			ws_url = "wss://";
+
+		ws_url += window.location.host;
+
+        self.ws = new WebSocket(ws_url + "/drink/events");
         self.ws.onopen = function() {
             drink.log("WS Got open event");
             self.use = true;
