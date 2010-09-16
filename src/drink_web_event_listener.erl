@@ -67,7 +67,7 @@ handle_info({ok, WebSocket}, State) ->
     dw_events:register_pid(drink_app_auth, State#worker.userref),
     yaws_api:websocket_send(WebSocket, json:encode({struct, [{event, "hello"}]})),
     {noreply, State#worker{socket = WebSocket}};
-handle_info({tcp, _WebSocket, DataFrame}, State) ->
+handle_info({Type, _WebSocket, DataFrame}, State) when Type =:= tcp; Type =:= ssl ->
     Data = yaws_websockets:unframe_all(DataFrame, []),
     [ handle_incoming_call(State, Packet) || Packet <- Data ],
     {noreply, State};
