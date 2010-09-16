@@ -333,6 +333,7 @@ drink.tabs.temperatures = new (function() {
     var plot_data = null;
     var temp_data = null;
     var maximum_time = null;
+	var visible = false;
         
     var gotTemps = function(data) {
         last_update = drink.time.nowUTC();
@@ -358,20 +359,21 @@ drink.tabs.temperatures = new (function() {
             var temps = {data: []};
             for(var i in data.machines[m]) {
                 var t = data.machines[m][i];
-                
+
                 if(prev + MaxBreak < t[0])
                     temps.data.push([(prev + MaxBreak) * 1000, null]);
-                
+
                 if(max_time < t[0])
                     max_time = t[0];
-                
+
                 prev = t[0];
                 temps.data.push([t[0] * 1000, t[1]]);
             }
-            
+
+            // TODO: don't hardcode
             if(m == 'littledrink')
                 temps.label = "Little Drink";
-            else if(m == 'bigdrink')
+            else if(m == 'drink')
                 temps.label = "Big Drink";
             else
                 temps.label = m;
@@ -382,9 +384,10 @@ drink.tabs.temperatures = new (function() {
         for (var m in data.machines)
             for (var i in data.machines[m])
                 data.machines[m][i][0] = data.machines[m][i][0] + drink.time.tz_offset;
-        
-        plot = $.plot($('#temperature_plot'), plot_data,
-            {xaxis: {mode: "time", min: local_start * 1000, max: max_time * 1000}});
+
+        if (visible)
+            plot = $.plot($('#temperature_plot'), plot_data,
+                {xaxis: {mode: "time", min: local_start * 1000, max: max_time * 1000}});
     }
     
     var getTemps = function(From, Length) {
@@ -398,9 +401,14 @@ drink.tabs.temperatures = new (function() {
     this.admin_required = false;
     
     this.show_tab = function() {
+		visible = true;
         if(last_update == false || last_update + refresh_interval < drink.time.nowUTC())
             self.refresh();
     }
+
+	this.hide_tab = function() {
+		visible = false;
+	}
     
     this.refresh = function() {
         getTemps(drink.time.nowUTC() - Length, Length + 60);
