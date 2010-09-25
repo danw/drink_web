@@ -79,9 +79,9 @@ request(_, U, 'GET', currentuser) ->
 request(_, _, _, currentuser) -> error(wrong_method);
 
 request(A, U, 'POST', drop) ->
-    case {yaws_api:postvar(A, "machine"), yaws_api:postvar(A, "slot")} of
-        {{ok, Machine}, {ok, SlotNum}} ->
-            api(U, drop, [{machine, Machine}, {slot, SlotNum}]);
+    case {yaws_api:postvar(A, "machine"), yaws_api:postvar(A, "slot"), yaws_api:postvar(A, "delay")} of
+        {{ok, Machine}, {ok, SlotNum}, {ok, Delay}} ->
+            api(U, drop, [{machine, Machine}, {slot, SlotNum}, {delay, Delay}]);
         _ ->
             error(invalid_args)
     end;
