@@ -628,7 +628,7 @@ drink.tabs.drink_machines = new (function() {
                 self.dropNow(delay);
             }
 
-            this.dropNow = function(delay) {
+            this.dropNow = function() {
                 var delay = 0;
                 if(arguments.length == 1) delay = arguments[0];
 
