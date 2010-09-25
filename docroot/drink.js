@@ -60,6 +60,7 @@ drink.websocket = new (function() {
     var backoff_orig = 500;
     var backoff_limit = 10000;
     this.backoff_delay = backoff_orig;
+    this.connection_msg = false;
     
     this.gotMessage = function(evt) {
         var data = JSON.parse(evt.data);
@@ -97,7 +98,20 @@ drink.websocket = new (function() {
     
     this.init = function() {
         if (!("WebSocket" in window)) {
-            drink.log("Upgrade to Chrome or another browser that support websockets!");
+            $('<div>Your browser doesn\'t support WebSockets. While some functions may work on this site, many won\'t without WebSockets support. Please upgrade to Safari, Chrome, or Firefox 4.0 with WebSocket support.</div>').dialog({
+                title: 'Please Upgrade',
+                resizable: false,
+                modal: true,
+                dialogClass: 'ui-state-error',
+                buttons: {
+                    'Download Chrome': function() {
+                        window.location = "http://www.google.com/chrome";
+                    },
+                    'Try Anyway': function() {
+                        $(this).dialog('close')
+                    }
+                }
+            });
             return;
         }
 
@@ -115,6 +129,24 @@ drink.websocket = new (function() {
         }
         self.ws.onmessage = self.gotMessage;
         self.ws.onclose = function() {
+            if (!self.connection_msg) {
+                $('<div>Your connection to the drink server has been lost. Data after this point may not be consistent.</div>').dialog({
+                    title: 'Connection Lost',
+                    resizable: false,
+                    modal: true,
+                    dialogClass: 'ui-state-error',
+                    buttons: {
+                        'Refresh': function() {
+                            location.reload(true);
+                        },
+                        'Continue': function() {
+                            $(this).dialog('close');
+                            self.connection_msg = false;
+                        }
+                    }
+                });
+                self.connection_msg = true;
+            }
             drink.log("WS Got close event");
             self.use = false;
             self.ws = false;
